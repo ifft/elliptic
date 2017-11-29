@@ -12,19 +12,21 @@
 ;(define (pow_exp r n)
 ;)
 
-(define (pow_exp carry result r0 n)
-  (let ([carry2 (if (eq? carry 1) r0 (sqr carry))]
-        [>> (lambda (x) (arithmetic-shift x -1))])
-    (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
-    (cond
-      ((zero? n) result)
-      (else
-        (if (eq? (modulo n 2) 0)
-          (pow_exp carry2 result r0 (>> n))
-          (pow_exp carry2 (* carry2 result) r0 (>> (sub1 n)))
+(define (pow_exp x n)
+  (define (pow_exp_aux carry result r0 n)
+    (let ([carry (if (eq? carry 1) r0 (sqr carry))]
+          [>> (lambda (x) (arithmetic-shift x -1))])
+      (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
+      (cond
+        ((zero? n) result)
+        (else
+          (if (eq? (modulo n 2) 0)
+            (pow_exp_aux carry result r0 (>> n))
+            (pow_exp_aux carry (* carry result) r0 (>> (sub1 n)))
+            )
           )
         )
       )
     )
+    (pow_exp_aux 1 1 x n)
   )
-
