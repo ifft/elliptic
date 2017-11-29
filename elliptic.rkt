@@ -13,7 +13,11 @@
 ;)
 
 (define (pow_exp x n)
-  (define (pow_exp_aux carry result r0 n)
+  (let pow_exp_aux ([carry 1]
+                    [result 1]
+                    [r0 x]
+                    [n n]
+                    )
     (let ([carry (if (eq? carry 1) r0 (sqr carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
       (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
@@ -28,5 +32,4 @@
         )
       )
     )
-    (pow_exp_aux 1 1 x n)
   )
