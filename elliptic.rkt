@@ -35,12 +35,14 @@
     )
   )
 
-(define (factor-2 x q)
- (cond
-  ((eq? (modulo x 2) 0) (factor-2 (quotient x 2) (add1 q)))
-  (else (values q x))
- )
-)
+(define (factor-2 x)
+  (let factor-2_aux ([x x] [q 0])
+    (cond
+      ((eq? (modulo x 2) 0) (factor-2_aux (quotient x 2) (add1 q)))
+      (else (values q x))
+      )
+    )
+  )
 
 
 
