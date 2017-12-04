@@ -1,5 +1,7 @@
 #lang racket
 (require rackunit "elliptic.rkt")
+; BUG this POW's infinitely?
+; (mod-sqr 8 17)
 
 ;;;;; pow ;;;;;
 (check-equal? (pow 5 0) 1)
@@ -12,13 +14,13 @@
 (check-equal? (pow-p 5 2 17) 8)
 
 ;;;;; factor-2 ;;;;;
-(let-values ([(q s) (factor-2 12)])
-(check-equal? 2 q)
-(check-equal? 3 s)
+(let-values ([(s q) (factor-2 12)])
+(check-equal? 2 s)
+(check-equal? 3 q)
 )
-(let-values ([(q s) (factor-2 bc_p)])
-(check-equal? 0 q)
-(check-equal? bc_p s)
+(let-values ([(s q) (factor-2 bc_p)])
+(check-equal? 0 s)
+(check-equal? bc_p q)
 )
 
 ;;;;; find-non-residue ;;;;;

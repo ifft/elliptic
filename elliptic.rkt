@@ -1,4 +1,5 @@
 #lang racket
+(require racket/trace)
 (provide (all-defined-out))
 ;bitcoin's elliptic curve parameters
 (define bc_E_a 0)
@@ -8,17 +9,13 @@
 (define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
 
-;(define (mod_pow x n p)
-;)
-;(define (pow_exp r n)
-;)
-
 (define (pow_exp x n mod_prime)
   (let pow_exp_aux ([carry 1]
                     [result 1]
                     [r0 x]
                     [n n]
                     )
+   (printf "pow_exp: ~a ~a ~a ~a ~n" carry result r0 n)
     (let ([carry (if (eq? carry 1) r0 (sqr carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
       (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
@@ -66,12 +63,51 @@
   )
 
 ; Tonelli-Shanks algorithm
-(define (mod-sqr n p)
- (factor-2 n p)
-)
+(trace-define (mod-sqr n p)
+  (define powp (lambda (x n) (pow-p x n p)))
+  (define (find-t^2^i_eq_1 t)
+    (let find-t^2^i_eq_1_aux
+      ([i 1])
+      (cond
+        ((= 1 (powp t (pow 2 i))) i)
+        (else (find-t^2^i_eq_1 (add1 i)))
+        )
+      )
+    )
+  (let-values ([(s q) (factor-2 (sub1 p))])
+              (when (= 0 (modulo q 2)) (error (format "ASSERT: q (~a) is not odd!~n" q)))
+              (let ([z (find-non-residue p)])
+                (let loop ([M s]
+                           [c (powp z q)]
+                           [t (powp n q)]
+                           [R (powp n (/ (add1 q) 2))]
+                           )
+                 (printf "out loop~n")
+                  (cond
+                    ((= t 1) R)
+                    (else 
+                      (let*
+                        (
+                         [i (find-t^2^i_eq_1 t)]
+                         [M i]
+                         [b (powp c (pow 2 (- M i 1)))]
+                         [b^2 (powp b 2)]
+                         [c b^2]
+                         [t (* t b^2)]
+                         [R (* R b)]
+                         )
+                        (printf "looping~n")
+                        (loop M c t R)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+  )
 
 (define (pow_bitcoin x n) (pow_exp x n (lambda (x) (modulo x bc_p))))
-(define (pow-p x n p) (pow_exp x n (lambda (x) (modulo x p))))
-(define (pow x n) (pow_exp x n identity))
+(define (pow-p x n p) (printf "pow-p~n") (pow_exp x n (lambda (x) (modulo x p))))
+(define (pow x n) (printf "pow~n") (pow_exp x n identity))
 ; XXX for testing    
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
