@@ -65,6 +65,7 @@
     )
   )
 
+; Tonelli-Shanks algorithm
 (define (mod-sqr n p)
  (factor-2 n p)
 )
