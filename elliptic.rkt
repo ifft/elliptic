@@ -19,7 +19,7 @@
                     [r0 x]
                     [n n]
                     )
-    (let ([carry (if (eq? carry 1) r0 (mod_prime (sqr carry)))]
+    (let ([carry (if (eq? carry 1) r0 (sqr carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
       (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
@@ -44,8 +44,33 @@
     )
   )
 
+(define (find-non-residue p)
+  (let*
+    (
+     [sub1p/2  (/ (sub1 p) 2)]
+     [pow      (lambda (x) (pow-p x sub1p/2 p))]
+     [residue? (lambda (x) (eq? (pow x) 1))]
+     )
+    (let find-non-residue_aux
+      ([curr 2])
+      (cond
+        ((residue? curr) (find-non-residue_aux (add1 curr)))
+        ; assert: x^((prime-1)/2) should be -1 otherwise
+        ((not (= (pow curr) (sub1 p)))
+         (error (format "ASSERT: (pow ~a) (~a)!= (sub1 ~a)" curr (pow curr) p))
+         )
+        (else curr)
+        )
+      )
+    )
+  )
 
+(define (mod-sqr n p)
+ (factor-2 n p)
+)
 
 (define (pow_bitcoin x n) (pow_exp x n (lambda (x) (modulo x bc_p))))
 (define (pow-p x n p) (pow_exp x n (lambda (x) (modulo x p))))
 (define (pow x n) (pow_exp x n identity))
+; XXX for testing    
+(define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
