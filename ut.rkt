@@ -42,8 +42,21 @@
 (check-equal? (mod-sqr 8 17) 12)
 
 ; some tests generated for Tonelly-Shranks
-(define primes '(13 17 19 21 101 103))
+(define primes '(13 17 19 23 101 103))
 
+; square it then root it
+(for-each 
+  (check-equal? (mod-sqr (pow-p j 2 i) i) j)
+  primes
+  )
+
+
+(check-equal? (mod-sqr j i) (pow-p j 2 i))
+
+(for-each (lambda (x)
+           (for-each (lambda (x)))
+          )
+ primes)
 
 ;(check-equal? (pow_bitcoin 5 0) 1)
 ;(check-equal? (pow_bitcoin 5 1) 5)
