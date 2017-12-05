@@ -1,7 +1,5 @@
 #lang racket
 (require rackunit "elliptic.rkt")
-; BUG this POW's infinitely?
-; (mod-sqr 8 17)
 
 ;;;;; pow ;;;;;
 (check-equal? (pow 5 0) 1)
@@ -38,6 +36,10 @@
 
 ;bug fixed in pow_exp
 (check-equal? (pow-p 12 6 13) 1)
+
+
+; Tonelly-Shranks
+(check-equal? (mod-sqr 8 17) 12)
 
 
 ;(check-equal? (pow_bitcoin 5 0) 1)

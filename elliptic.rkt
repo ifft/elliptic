@@ -10,7 +10,7 @@
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
 
 (define (pow_exp x n mod_prime)
-  (let pow_exp_aux ([carry 1]
+  (let loop ([carry 1]
                     [result 1]
                     [r0 x]
                     [n n]
@@ -23,8 +23,8 @@
         ((zero? n) result)
         (else
           (if (eq? (modulo n 2) 0)
-            (pow_exp_aux carry result r0 (>> n))
-            (pow_exp_aux carry (mod_prime (* carry result)) r0 (>> (sub1 n)))
+            (loop carry result r0 (>> n))
+            (loop carry (mod_prime (* carry result)) r0 (>> (sub1 n)))
             )
           )
         )
@@ -63,14 +63,18 @@
   )
 
 ; Tonelli-Shanks algorithm
-(trace-define (mod-sqr n p)
+(define (mod-sqr n p)
   (define powp (lambda (x n) (pow-p x n p)))
   (define (find-t^2^i_eq_1 t)
-    (let find-t^2^i_eq_1_aux
+    (let loop
       ([i 1])
       (cond
-        ((= 1 (powp t (pow 2 i))) i)
-        (else (find-t^2^i_eq_1 (add1 i)))
+        ((= 1 (powp t (pow 2 i))) (begin (printf "OK! i = ~a~n" i) i))
+        (else 
+          (begin
+            (printf "looping2 i = ~a~n" i)
+            (loop (add1 i)))
+          )
         )
       )
     )
@@ -82,21 +86,23 @@
                            [t (powp n q)]
                            [R (powp n (/ (add1 q) 2))]
                            )
-                 (printf "out loop~n")
+                 (printf "outer z: ~a M: ~a c: ~a t: ~a R: ~a~n" z M c t R)
                   (cond
                     ((= t 1) R)
                     (else 
                       (let*
                         (
                          [i (find-t^2^i_eq_1 t)]
-                         [M i]
                          [b (powp c (pow 2 (- M i 1)))]
+                         [M i]
                          [b^2 (powp b 2)]
                          [c b^2]
-                         [t (* t b^2)]
-                         [R (* R b)]
+                         [t (modulo (* t b^2) p)]
+                         [R (modulo (* R b) p)]
                          )
-                        (printf "looping~n")
+                        (printf "inner i: ~a b: ~a M: ~a b^2: ~a c: ~a t: ~a R: ~a~n"
+                         i b M b^2 c t R
+                         )
                         (loop M c t R)
                         )
                       )
@@ -111,3 +117,5 @@
 (define (pow x n) (printf "pow~n") (pow_exp x n identity))
 ; XXX for testing    
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
+
+(mod-sqr 8 17)
