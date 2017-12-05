@@ -1,5 +1,4 @@
 #lang racket
-(require racket/trace)
 (provide (all-defined-out))
 ;bitcoin's elliptic curve parameters
 (define bc_E_a 0)
@@ -16,13 +15,13 @@
                     [n n]
                     )
    (printf "pow_exp: ~a ~a ~a ~a ~n" carry result r0 n)
-    (let ([carry (if (eq? carry 1) r0 (sqr carry))]
+    (let ([carry (if (= carry 1) r0 (sqr carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
       (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
         ((zero? n) result)
         (else
-          (if (eq? (modulo n 2) 0)
+          (if (= (modulo n 2) 0)
             (loop carry result r0 (>> n))
             (loop carry (mod_prime (* carry result)) r0 (>> (sub1 n)))
             )
@@ -35,18 +34,21 @@
 (define (factor-2 x)
   (let factor-2_aux ([x x] [q 0])
     (cond
-      ((eq? (modulo x 2) 0) (factor-2_aux (quotient x 2) (add1 q)))
+      ((= (modulo x 2) 0) (factor-2_aux (quotient x 2) (add1 q)))
       (else (values q x))
       )
     )
   )
 
+(define (residue? x p)
+ (= (pow-p x (/ (sub1 p) 2) p) 1)
+)
+
 (define (find-non-residue p)
   (let*
     (
-     [sub1p/2  (/ (sub1 p) 2)]
-     [pow      (lambda (x) (pow-p x sub1p/2 p))]
-     [residue? (lambda (x) (eq? (pow x) 1))]
+     [pow      (lambda (x) (pow-p x (/ (sub1 p) 2) p))]
+     [residue? (lambda (x) (residue? x p))]
      )
     (let find-non-residue_aux
       ([curr 2])
@@ -54,7 +56,7 @@
         ((residue? curr) (find-non-residue_aux (add1 curr)))
         ; assert: x^((prime-1)/2) should be -1 otherwise
         ((not (= (pow curr) (sub1 p)))
-         (error (format "ASSERT: (pow ~a) (~a)!= (sub1 ~a)" curr (pow curr) p))
+         (error 'eulers-criterion-fail "~a^~a != -1" curr (/ (sub1 p) 2))
          )
         (else curr)
         )
@@ -78,15 +80,15 @@
         )
       )
     )
+  (unless (residue? n p) (error 'mod-sqr-non-residue "n: ~a p: ~a" n p))
   (let-values ([(s q) (factor-2 (sub1 p))])
-              (when (= 0 (modulo q 2)) (error (format "ASSERT: q (~a) is not odd!~n" q)))
+              (when (= 0 (modulo q 2)) (error 'q-is-not-odd "~a" q))
               (let ([z (find-non-residue p)])
                 (let loop ([M s]
                            [c (powp z q)]
                            [t (powp n q)]
                            [R (powp n (/ (add1 q) 2))]
                            )
-                 (printf "outer z: ~a M: ~a c: ~a t: ~a R: ~a~n" z M c t R)
                   (cond
                     ((= t 1) R)
                     (else 
@@ -99,9 +101,6 @@
                          [c b^2]
                          [t (modulo (* t b^2) p)]
                          [R (modulo (* R b) p)]
-                         )
-                        (printf "inner i: ~a b: ~a M: ~a b^2: ~a c: ~a t: ~a R: ~a~n"
-                         i b M b^2 c t R
                          )
                         (loop M c t R)
                         )

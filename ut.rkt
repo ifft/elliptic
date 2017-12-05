@@ -41,6 +41,9 @@
 ; Tonelly-Shranks
 (check-equal? (mod-sqr 8 17) 12)
 
+; some tests generated for Tonelly-Shranks
+(define primes '(13 17 19 21 101 103))
+
 
 ;(check-equal? (pow_bitcoin 5 0) 1)
 ;(check-equal? (pow_bitcoin 5 1) 5)
