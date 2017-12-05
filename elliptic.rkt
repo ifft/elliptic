@@ -90,7 +90,7 @@
                            [R (powp n (/ (add1 q) 2))]
                            )
                   (cond
-                    ((= t 1) R)
+                    ((= t 1) (sort `(,R ,(- p R)) <))
                     (else 
                       (let*
                         (

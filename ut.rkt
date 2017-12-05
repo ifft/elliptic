@@ -30,33 +30,32 @@
 ;(check-equal? (find-non-residue 17) )
 
 ;;;;; assumption of pow/mod ;;;;;
-(display "!") (newline)
-(define p_probe '(17 19 23 101 103))
-(for-each (lambda (x) (check-equal? (modulo (pow 3 x) x) (pow-p 3 x x))) p_probe)
 
 ;bug fixed in pow_exp
 (check-equal? (pow-p 12 6 13) 1)
 
 
 ; Tonelly-Shranks
-(check-equal? (mod-sqr 8 17) 12)
+(check-equal? (mod-sqr 8 17) '(5 12))
 
 ; some tests generated for Tonelly-Shranks
 (define primes '(13 17 19 23 101 103))
 
 ; square it then root it
 (for-each 
-  (check-equal? (mod-sqr (pow-p j 2 i) i) j)
+  (lambda (p)
+    (let loop ([i 2])
+      (when
+        (< i p)
+        (begin
+          (check-equal? (mod-sqr (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
+          (loop (add1 i))
+          )
+        )
+      )
+    )
   primes
   )
-
-
-(check-equal? (mod-sqr j i) (pow-p j 2 i))
-
-(for-each (lambda (x)
-           (for-each (lambda (x)))
-          )
- primes)
 
 ;(check-equal? (pow_bitcoin 5 0) 1)
 ;(check-equal? (pow_bitcoin 5 1) 5)
