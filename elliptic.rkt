@@ -122,19 +122,21 @@
             [s '(1 0)]
             [t '(0 1)]
             )
-  (let*-values (
-               [(quot rem) (quotient/remainder (car r) (cadr r))]
-               [(r2) (- (car r) (* quot (cadr r)))]
-               [(s2) (- (car s) (* quot (cadr s)))]
-               [(t2) (- (car t) (* quot (cadr t)))]
+  (let-values ([(quot rem) (quotient/remainder (car r) (cadr r))])
+              (let* (
+                     [(r2) (- (car r) (* quot (cadr r)))]
+                     [(s2) (- (car s) (* quot (cadr s)))]
+                     [(t2) (- (car t) (* quot (cadr t)))]
+                     )
+                (cond
+                  ((zero? r2) (values r2 (car s2) (car t2)))
+                  (else
+                    (loop r s t)
+                    )
+                  )
+
+                )
               )
-   (cond
-    ((zero? r2) (values r2 (car s2) (car t2)))
-    (else
-     (loop r s t)
-    )
-   )
-  )
    )
  (loop '(x p) '(1 0)
 )
