@@ -1,6 +1,15 @@
 #lang racket
 (require rackunit "elliptic.rkt")
 
+;;;;; euclid++ ;;;;;
+(let-values (
+             [(a b c) (euclid++ 240 46)]
+             )
+            (check-equal? 0 a)
+            (check-equal? 23 b)
+            (check-equal? -120 c)
+            )
+
 ;;;;; pow ;;;;;
 (check-equal? (pow 5 0) 1)
 (check-equal? (pow 5 1) 5)

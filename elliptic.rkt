@@ -111,6 +111,34 @@
               )
   )
 
+(define (euclid++ x p)
+ ; r[i+1] = r[i-1] - x*r[i] a b
+ ; s[i+1] = s[i-1] - x*s[i] 1,0,..
+ ; t[i+1] = t[i-1] - x*t[i] 0,1,..
+ ; 240 46 , 0, 23, -120
+ ;
+ (let loop (
+            [r (sort (x p) >)]
+            [s '(1 0)]
+            [t '(0 1)]
+            )
+  (let*-values (
+               [(quot rem) (quotient/remainder (car r) (cadr r))]
+               [(r2) (- (car r) (* quot (cadr r)))]
+               [(s2) (- (car s) (* quot (cadr s)))]
+               [(t2) (- (car t) (* quot (cadr t)))]
+              )
+   (cond
+    ((zero? r2) (values r2 (car s2) (car t2)))
+    (else
+     (loop r s t)
+    )
+   )
+  )
+   )
+ (loop '(x p) '(1 0)
+)
+
 (define (pow_bitcoin x n) (pow_exp x n (lambda (x) (modulo x bc_p))))
 (define (pow-p x n p) (printf "pow-p~n") (pow_exp x n (lambda (x) (modulo x p))))
 (define (pow x n) (printf "pow~n") (pow_exp x n identity))
