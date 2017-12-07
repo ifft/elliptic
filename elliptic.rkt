@@ -117,6 +117,7 @@
   ; t[i+1] = t[i-1] - x*t[i] 0,1,..
   ; 240 46 , 0, 23, -120
   ;
+  (define params (sort `(,x ,p) >))
   (let loop (
              [r (sort `(,x ,p) >)]
              [s '(1 0)]
