@@ -5,9 +5,9 @@
 (let-values (
              [(a b c) (euclid++ 240 46)]
              )
-            (check-equal? 0 a)
-            (check-equal? 23 b)
-            (check-equal? -120 c)
+            (check-equal? a 0)
+            (check-equal? b 23)
+            (check-equal? c -120)
             )
 
 ;;;;; pow ;;;;;
