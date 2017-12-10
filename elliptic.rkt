@@ -112,27 +112,23 @@
   )
 
 (define (euclid++ x p)
-  ; r[i+1] = r[i-1] - x*r[i] a b
-  ; s[i+1] = s[i-1] - x*s[i] 1,0,..
-  ; t[i+1] = t[i-1] - x*t[i] 0,1,..
-  ; 240 46 , 0, 23, -120
-  ;
-  (define params (sort `(,x ,p) >))
   (let loop (
-             [r (sort `(,x ,p) >)]
-             [s '(1 0)]
-             [t '(0 1)]
+             [r (list->vector (sort `(,x ,p) >))]
+             [s #(1 0)]
+             [t #(0 1)]
              )
-    (let-values ([(quot rem) (quotient/remainder (car r) (cadr r))])
+    (let-values ([(quot rem) (quotient/remainder (vector-ref r 0) (vector-ref r 1))])
                 (let* (
-                       [r2 (- (car r) (* quot (cadr r)))]
-                       [s2 (- (car s) (* quot (cadr s)))]
-                       [t2 (- (car t) (* quot (cadr t)))]
+                       [r2 (- (vector-ref r 0) (* quot (vector-ref r 1)))]
+                       [s2 (- (vector-ref s 0) (* quot (vector-ref s 1)))]
+                       [t2 (- (vector-ref t 0) (* quot (vector-ref t 1)))]
                        )
                   (cond
                     ((zero? r2) (values r2 s2 t2))
                     (else
-                      (loop (list (cadr r) r2) (list (cadr s) s2) (list (cadr t) t2))
+                      (loop `#(,(vector-ref r 1), r2)
+                            `#(,(vector-ref s 1), s2) 
+                            `#(,(vector-ref t 1), t2))
                       )
                     )
 
