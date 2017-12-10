@@ -8,22 +8,24 @@
 (define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
 
-(define (pow_exp x n mod_prime)
-  (let loop ([carry 1]
-                    [result 1]
-                    [r0 x]
-                    [n n]
-                    )
-   (printf "pow_exp: ~a ~a ~a ~a ~n" carry result r0 n)
-    (let ([carry (if (= carry 1) r0 (sqr carry))]
+(define (binary-op x n inc-carry op-step mod_prime unity_element)
+  (let loop (
+             [firstrun #t]
+             [carry 1]
+             [result unity_element]
+             [r0 x]
+             [n n]
+             )
+    (printf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
+    (let ([carry (if firstrun r0 (inc-carry carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
-      (printf "pow_exp carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
+      (printf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
         ((zero? n) result)
         (else
           (if (= (modulo n 2) 0)
-            (loop carry result r0 (>> n))
-            (loop carry (mod_prime (* carry result)) r0 (>> (sub1 n)))
+            (loop #f carry result r0 (>> n))
+            (loop #f carry (mod_prime (op-step carry result)) r0 (>> (sub1 n)))
             )
           )
         )
@@ -31,10 +33,31 @@
     )
   )
 
+(define (binary-mul x n) (binary-op x n
+                                    (lambda (carry) (* 2 carry))
+                                    +
+                                    identity
+                                    0))
+
+(define (_binary-pow x n modfunc)
+  (binary-op x n
+             sqr
+             *
+             modfunc
+             1
+             )
+  )
+
+(define (binary-pow x n) (_binary-pow x n identity))
+
+(define (binary-pow-modp x n p) (_binary-pow x n
+                                 (lambda (x) (modulo x p))
+                                 ))
+
 (define (factor-2 x)
-  (let factor-2_aux ([x x] [q 0])
+  (let loop ([x x] [q 0])
     (cond
-      ((= (modulo x 2) 0) (factor-2_aux (quotient x 2) (add1 q)))
+      ((= (modulo x 2) 0) (loop (quotient x 2) (add1 q)))
       (else (values q x))
       )
     )
@@ -65,22 +88,21 @@
   )
 
 ; Tonelli-Shanks algorithm
-(define (mod-sqr n p)
+(define (mod-sqrt n p)
   (define powp (lambda (x n) (pow-p x n p)))
   (define (find-t^2^i_eq_1 t)
     (let loop
       ([i 1])
       (cond
-        ((= 1 (powp t (pow 2 i))) (begin (printf "OK! i = ~a~n" i) i))
+        ((= 1 (powp t (pow 2 i))) i)
         (else 
           (begin
-            (printf "looping2 i = ~a~n" i)
             (loop (add1 i)))
           )
         )
       )
     )
-  (unless (residue? n p) (error 'mod-sqr-non-residue "n: ~a p: ~a" n p))
+  (unless (residue? n p) (error 'mod-sqrt-non-residue "n: ~a p: ~a" n p))
   (let-values ([(s q) (factor-2 (sub1 p))])
               (when (= 0 (modulo q 2)) (error 'q-is-not-odd "~a" q))
               (let ([z (find-non-residue p)])
@@ -117,6 +139,7 @@
              [s #(1 0)]
              [t #(0 1)]
              )
+   ;(printf "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
     (let-values ([(quot rem) (quotient/remainder (vector-ref r 0) (vector-ref r 1))])
                 (let* (
                        [r2 (- (vector-ref r 0) (* quot (vector-ref r 1)))]
@@ -124,7 +147,11 @@
                        [t2 (- (vector-ref t 0) (* quot (vector-ref t 1)))]
                        )
                   (cond
-                    ((zero? r2) (values r2 s2 t2))
+                    ((zero? r2) (values
+                        (vector-ref r 1)
+                        (vector-ref s 1)
+                        (vector-ref t 1)
+                        ))
                     (else
                       (loop `#(,(vector-ref r 1), r2)
                             `#(,(vector-ref s 1), s2) 
@@ -137,10 +164,24 @@
     )
   )
 
-(define (pow_bitcoin x n) (pow_exp x n (lambda (x) (modulo x bc_p))))
-(define (pow-p x n p) (printf "pow-p~n") (pow_exp x n (lambda (x) (modulo x p))))
-(define (pow x n) (printf "pow~n") (pow_exp x n identity))
+(define (inverse-of x p)
+ ;(printf "inverse-of ~a ~a~n" x p)
+  (let-values ([(gcd a b) (euclid++ x p)])
+              (unless (equal? gcd 1) (error 'gcd-not-eq-1 "gcd(~a ~a) != 1"  x p))
+              (unless (equal? (modulo (+ (* a x) (* b p)) p) gcd) 'euclid-wrong-result "(~a * ~a) + (~a * ~a) != ~a"
+                a x b p gcd
+                )
+              (modulo b p)
+              )
+  )
+
+(define (pow_bitcoin x n) (binary-pow-modp x n bc_p))
+
+(define (pow-p x n p) (binary-pow-modp x n p))
+(define (mul-p x y p) (modulo (binary-mul x y) p))
+
+(define (pow x n) (binary-pow x n))
 ; XXX for testing    
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
 
-(mod-sqr 8 17)
+(mod-sqrt 8 17)

@@ -1,13 +1,37 @@
 #lang racket
 (require rackunit "elliptic.rkt")
 
+(define primes '(13 17 19 23 101 103))
+
+;;;;; binary mul ;;;;;
+(for ([a (in-range 1 10)]
+      )
+     (for ([b (in-range 1 10)])
+      (printf "~ax~a = ~a~n" a b (binary-mul a b))
+      (check-equal? (binary-mul a b) (* a b))
+          )
+     )
+
+;;;;; inverse-of ;;;;;
+(for-each (lambda (p)
+            (for ([i (in-range 1 p)])
+             (begin
+             (printf "inverse-of ~a ~a~n" i p)
+                 (check-equal? (mul-p i (inverse-of i p) p) 1
+                               )
+             )
+                 )
+            )
+          primes
+          )
+
 ;;;;; euclid++ ;;;;;
 (let-values (
              [(a b c) (euclid++ 240 46)]
              )
-            (check-equal? a 0)
-            (check-equal? b 23)
-            (check-equal? c -120)
+            (check-equal? a 2)
+            (check-equal? b -9)
+            (check-equal? c 47)
             )
 
 ;;;;; pow ;;;;;
@@ -45,10 +69,9 @@
 
 
 ; Tonelly-Shranks
-(check-equal? (mod-sqr 8 17) '(5 12))
+(check-equal? (mod-sqrt 8 17) '(5 12))
 
 ; some tests generated for Tonelly-Shranks
-(define primes '(13 17 19 23 101 103))
 
 ; square it then root it
 (for-each 
@@ -57,7 +80,7 @@
       (when
         (< i p)
         (begin
-          (check-equal? (mod-sqr (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
+          (check-equal? (mod-sqrt (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
           (loop (add1 i))
           )
         )
