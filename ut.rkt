@@ -1,13 +1,13 @@
 #lang racket
 (require rackunit "elliptic.rkt")
-
+(parameterize ([debug (if (getenv "DEBUG") #t #f)])
 (define primes '(13 17 19 23 101 103))
 
 ;;;;; binary mul ;;;;;
 (for ([a (in-range 1 10)]
       )
      (for ([b (in-range 1 10)])
-      (printf "~ax~a = ~a~n" a b (binary-mul a b))
+      (dprintf "~ax~a = ~a~n" a b (binary-mul a b))
       (check-equal? (binary-mul a b) (* a b))
           )
      )
@@ -16,7 +16,7 @@
 (for-each (lambda (p)
             (for ([i (in-range 1 p)])
              (begin
-             (printf "inverse-of ~a ~a~n" i p)
+             (dprintf "inverse-of ~a ~a~n" i p)
                  (check-equal? (mul-p i (inverse-of i p) p) 1
                                )
              )
@@ -100,3 +100,4 @@
 ;(check-equal? (pow_exp 5 2) 25)
 ;(check-equal? (pow_exp 5 3) 125)
 ;(check-equal? (pow_exp 5 4) (* 5 125))
+)
