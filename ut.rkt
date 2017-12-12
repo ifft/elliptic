@@ -69,7 +69,7 @@
 
 
 ; Tonelly-Shranks
-(check-equal? (mod-sqrt 8 17) '(5 12))
+(check-equal? (sqrt-p 8 17) '(5 12))
 
 ; some tests generated for Tonelly-Shranks
 
@@ -80,7 +80,7 @@
       (when
         (< i p)
         (begin
-          (check-equal? (mod-sqrt (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
+          (check-equal? (sqrt-p (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
           (loop (add1 i))
           )
         )
@@ -88,6 +88,9 @@
     )
   primes
   )
+
+; calc-y
+(check-equal? (car (calc-y bc_G_x bitcoin-curve)) bc_G_y)
 
 ;(check-equal? (pow_bitcoin 5 0) 1)
 ;(check-equal? (pow_bitcoin 5 1) 5)

@@ -6,6 +6,8 @@
 (define bc_p #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F)
 (define bc_G #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798)
 (define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
+(define bc_G_x bc_G)
+(define bc_G_y #x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
 
 (define debug (make-parameter #t))
@@ -15,8 +17,7 @@
  )
 )
 
-(struct elliptic-curve-abp (a b p))
-(struct elliptic-curve elliptic-curve-abp (G))
+(struct elliptic-curve (a b p G))
 (define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G))
 
 (define (binary-op x n inc-carry op-step mod_prime unity_element)
@@ -194,16 +195,14 @@
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
 
 (define (calc-y x curve)
-  (let* ([a (elliptic-curve-abp-a curve)]
-         [b (elliptic-curve-abp-b curve)]
-         [p (elliptic-curve-abp-p curve)]
+  (let* ([a (elliptic-curve-a curve)]
+         [b (elliptic-curve-b curve)]
+         [p (elliptic-curve-p curve)]
          [pow3 (lambda (x) (pow-p x 3 p))]
          [mod (lambda (x) (modulo x p))]
          [sqrt (lambda (x) (sqrt-p x p))]
         )
-   (values a b p)
-    (+ (pow3 x) (* a x) b)
-    ;(sqrt (+ (pow3 x) (* a x) b))
+    (sqrt (+ (pow3 x) (* a x) b))
     )
   )
 
