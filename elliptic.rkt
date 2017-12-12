@@ -16,10 +16,10 @@
              [r0 x]
              [n n]
              )
-    (printf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
+    ;(printf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
     (let ([carry (if firstrun r0 (inc-carry carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
-      (printf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
+      ;(printf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
         ((zero? n) result)
         (else
@@ -41,7 +41,7 @@
 
 (define (_binary-pow x n modfunc)
   (binary-op x n
-             sqr
+             (lambda (x) (modfunc (sqr x)))
              *
              modfunc
              1
@@ -73,10 +73,10 @@
      [pow      (lambda (x) (pow-p x (/ (sub1 p) 2) p))]
      [residue? (lambda (x) (residue? x p))]
      )
-    (let find-non-residue_aux
+    (let loop
       ([curr 2])
       (cond
-        ((residue? curr) (find-non-residue_aux (add1 curr)))
+        ((residue? curr) (loop (add1 curr)))
         ; assert: x^((prime-1)/2) should be -1 otherwise
         ((not (= (pow curr) (sub1 p)))
          (error 'eulers-criterion-fail "~a^~a != -1" curr (/ (sub1 p) 2))
@@ -96,9 +96,7 @@
       (cond
         ((= 1 (powp t (pow 2 i))) i)
         (else 
-          (begin
-            (loop (add1 i)))
-          )
+          (loop (add1 i)))
         )
       )
     )
@@ -111,6 +109,8 @@
                            [t (powp n q)]
                            [R (powp n (/ (add1 q) 2))]
                            )
+                 (printf "iterating M ~a c ~a t ~a R ~a~n"
+                  M c t R)
                   (cond
                     ((= t 1) (sort `(,R ,(- p R)) <))
                     (else 
@@ -184,4 +184,5 @@
 ; XXX for testing    
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
 
-(mod-sqrt 8 17)
+;(mod-sqrt 8 17)
+(mod-sqrt (modulo (+ (pow-p bc_G 3 bc_p) 7) bc_p) bc_p)
