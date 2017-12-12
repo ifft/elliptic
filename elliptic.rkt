@@ -8,6 +8,17 @@
 (define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
 
+(define debug (make-parameter #t))
+(define dprintf
+ (lambda x
+   (when (debug) (apply printf x))
+ )
+)
+
+(struct elliptic-curve-abp (a b p))
+(struct elliptic-curve elliptic-curve-abp (G))
+(define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G))
+
 (define (binary-op x n inc-carry op-step mod_prime unity_element)
   (let loop (
              [firstrun #t]
@@ -16,10 +27,10 @@
              [r0 x]
              [n n]
              )
-    ;(printf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
+    (dprintf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
     (let ([carry (if firstrun r0 (inc-carry carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
-      ;(printf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
+      (dprintf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
         ((zero? n) result)
         (else
@@ -88,7 +99,7 @@
   )
 
 ; Tonelli-Shanks algorithm
-(define (mod-sqrt n p)
+(define (sqrt-p n p)
   (define powp (lambda (x n) (pow-p x n p)))
   (define (find-t^2^i_eq_1 t)
     (let loop
@@ -100,7 +111,7 @@
         )
       )
     )
-  (unless (residue? n p) (error 'mod-sqrt-non-residue "n: ~a p: ~a" n p))
+  (unless (residue? n p) (error 'sqrt-p "n: ~a p: ~a" n p))
   (let-values ([(s q) (factor-2 (sub1 p))])
               (when (= 0 (modulo q 2)) (error 'q-is-not-odd "~a" q))
               (let ([z (find-non-residue p)])
@@ -109,8 +120,6 @@
                            [t (powp n q)]
                            [R (powp n (/ (add1 q) 2))]
                            )
-                 (printf "iterating M ~a c ~a t ~a R ~a~n"
-                  M c t R)
                   (cond
                     ((= t 1) (sort `(,R ,(- p R)) <))
                     (else 
@@ -139,7 +148,7 @@
              [s #(1 0)]
              [t #(0 1)]
              )
-   ;(printf "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
+   ;(dprintf "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
     (let-values ([(quot rem) (quotient/remainder (vector-ref r 0) (vector-ref r 1))])
                 (let* (
                        [r2 (- (vector-ref r 0) (* quot (vector-ref r 1)))]
@@ -165,7 +174,7 @@
   )
 
 (define (inverse-of x p)
- ;(printf "inverse-of ~a ~a~n" x p)
+ ;(dprintf "inverse-of ~a ~a~n" x p)
   (let-values ([(gcd a b) (euclid++ x p)])
               (unless (equal? gcd 1) (error 'gcd-not-eq-1 "gcd(~a ~a) != 1"  x p))
               (unless (equal? (modulo (+ (* a x) (* b p)) p) gcd) 'euclid-wrong-result "(~a * ~a) + (~a * ~a) != ~a"
@@ -184,5 +193,17 @@
 ; XXX for testing    
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
 
-;(mod-sqrt 8 17)
-(mod-sqrt (modulo (+ (pow-p bc_G 3 bc_p) 7) bc_p) bc_p)
+(define (calc-y x curve)
+  (let* ([a (elliptic-curve-abp-a curve)]
+         [b (elliptic-curve-abp-b curve)]
+         [p (elliptic-curve-abp-p curve)]
+         [pow3 (lambda (x) (pow-p x 3 p))]
+         [mod (lambda (x) (modulo x p))]
+         [sqrt (lambda (x) (sqrt-p x p))]
+        )
+   (values a b p)
+    (+ (pow3 x) (* a x) b)
+    ;(sqrt (+ (pow3 x) (* a x) b))
+    )
+  )
+
