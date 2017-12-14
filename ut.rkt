@@ -3,6 +3,11 @@
 (parameterize ([debug (if (getenv "DEBUG") #t #f)])
 (define primes '(13 17 19 23 101 103))
 
+;;;;; crash test ;;;;;
+(x)
+(x)
+(x)
+
 ;;;;; add-point 1 ;;;;;
 ; TODO find test cases elsewhere
 (check-equal? (point-x (add-point bc_G bitcoin-curve)) 89565891926547004231252920425935692360644145829622209833684329913297188986597)
