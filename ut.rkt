@@ -58,9 +58,6 @@
 (check-equal? (find-non-residue 17) 3)
 (check-equal? (find-non-residue 19) 2)
 (check-equal? (find-non-residue 23) 5)
-;(check-equal? (find-non-residue 17) )
-;(check-equal? (find-non-residue 17) )
-;(check-equal? (find-non-residue 17) )
 
 ;;;;; assumption of pow/mod ;;;;;
 
@@ -92,15 +89,4 @@
 ; calc-y
 (check-equal? (car (calc-y bc_G_x bitcoin-curve)) bc_G_y)
 
-;(check-equal? (pow_bitcoin 5 0) 1)
-;(check-equal? (pow_bitcoin 5 1) 5)
-;(check-equal? (pow_bitcoin 5 2) 25)
-;(check-equal? (pow_bitcoin 5 3) 125)
-;(check-equal? (pow_bitcoin 5 4) (* 5 125))
-;
-;(check-equal? (pow_exp 5 0) 1)
-;(check-equal? (pow_exp 5 1) 5)
-;(check-equal? (pow_exp 5 2) 25)
-;(check-equal? (pow_exp 5 3) 125)
-;(check-equal? (pow_exp 5 4) (* 5 125))
 )

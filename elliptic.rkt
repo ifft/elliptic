@@ -1,24 +1,29 @@
 #lang racket
+;(require racket/random)
 (provide (all-defined-out))
 ;bitcoin's elliptic curve parameters
 (define bc_E_a 0)
 (define bc_E_b 7)
-(define bc_p #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F)
-(define bc_G #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798)
-(define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
-(define bc_G_x bc_G)
-(define bc_G_y #x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
+(define bc_p #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F)
+(define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
+
+(define bc_G_x #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798)
+(define bc_G_y #x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 
 (define debug (make-parameter #t))
+(define devel (make-parameter #t))
 (define dprintf
  (lambda x
    (when (debug) (apply printf x))
  )
 )
 
-(struct elliptic-curve (a b p G))
-(define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G))
+(struct point (x y))
+(define bc_G (point bc_G_x bc_G_y))
+
+(struct elliptic-curve (a b p G n))
+(define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G bc_n))
 
 (define (binary-op x n inc-carry op-step mod_prime unity_element)
   (let loop (
@@ -206,3 +211,117 @@
     )
   )
 
+(define calc-m 
+  (let ([calc-m-base (lambda (curve)
+                       (let ([p (elliptic-curve-p curve)])
+                         (let (
+                               [mod (lambda (x) (modulo x p))]
+                               [sqr (lambda (x) (pow-p x 2 p))]
+                               [a   (elliptic-curve-a curve)]
+                               [inv (lambda (x) (inverse-of x p))]
+                               )
+                           (case-lambda
+                             ((pointP)
+                              (mod (* (+ (* 3
+                                            (sqr (point-x pointP)))
+                                         a)
+                                      (inv (* 2 (point-y pointP)))
+                                      )
+                                   )
+                              )
+                             ((pointP pointQ)
+                              (mod (* (- (point-y pointP) (point-y pointQ))
+                                      (inv (- (point-x pointP) (point-x pointQ))))
+
+                                   )
+                              )
+                             )
+                           )
+                         )
+                       )])
+    (case-lambda
+      ((pointP curve) ((calc-m-base curve) pointP))
+      ((pointP pointQ curve) ((calc-m-base curve) pointP pointQ))
+      )
+    )
+  )
+
+(define add-point
+  (define (add-point-calc-x point m curve))
+  (define (add-point-calc-y point m curve))
+  (case-lambda
+    ((pointP pointQ curve)
+     (let ([m (calc-m pointP pointQ curve)])
+       xr = m2 - xp -xq mod p
+       )
+     )
+    ((pointP curve)
+     (let ([m (calc-m pointP curve)]))
+     yr = yp + m (xr - xp) mod p
+     yr = yq + m (xr - xq) mod p
+     )
+    )
+  )
+
+(define (calc-m-old pointP pointQ curve)
+  (let ([p   (elliptic-curve-p curve)])
+    (let (
+          [mod (lambda (x) (modulo x p))]
+          [sqr (lambda (x) (pow-p x 2 p))]
+          [a   (elliptic-curve-a curve)]
+          [inv (lambda (x) (inverse-of x p))]
+          )
+      (if (and (equal? (point-x pointP) (point-x pointQ))
+                (equal? (point-y pointP) (point-y pointQ)))
+        (mod (* (+ (* 3
+                      (sqr (point-x pointP)))
+                   a)
+                (inv (* 2 (point-y pointP)))
+                )
+             )
+        (mod (* (- (point-y pointP) (point-y pointQ))
+                (inv (- (point-x pointP) (point-x pointQ))))
+
+             )
+        )
+      )
+    )
+  )
+
+(define (random16bit)
+ (random #xFFFF)
+)
+
+(define (random32byte)
+  (let loop ([i 16]
+             [result 0]
+             )
+    (cond
+      ((zero? i) result)
+      (else
+        (loop (sub1 i) (+ (arithmetic-shift result 16) (random16bit))
+              )
+        )
+      )
+    )
+  )
+
+(define (select-k curve)
+  (let loop ([result (random32byte)])
+    (cond
+      ((and (< result (elliptic-curve-n curve))
+            (not (zero? result)))
+       result)
+      (else (loop (random32byte)))
+      )
+    )
+  )
+
+(define (sign message curve)
+  (select-k curve)
+  (mul-p )
+)
+
+(when (devel) (random-seed 42))
+
+(number->string (random32byte) 16)
