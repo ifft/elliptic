@@ -154,7 +154,7 @@
              [s #(1 0)]
              [t #(0 1)]
              )
-   ;(dprintf "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
+   (dprintf "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
     (let-values ([(quot rem) (quotient/remainder (vector-ref r 0) (vector-ref r 1))])
                 (let* (
                        [r2 (- (vector-ref r 0) (* quot (vector-ref r 1)))]
@@ -180,7 +180,7 @@
   )
 
 (define (inverse-of x p)
- ;(dprintf "inverse-of ~a ~a~n" x p)
+  (dprintf "inverse-of ~a ~a~n" x p)
   (let-values ([(gcd a b) (euclid++ x p)])
               (unless (equal? gcd 1) (error 'gcd-not-eq-1 "gcd(~a ~a) != 1"  x p))
               (unless (equal? (modulo (+ (* a x) (* b p)) p) gcd) 'euclid-wrong-result "(~a * ~a) + (~a * ~a) != ~a"
@@ -247,19 +247,27 @@
   )
 
 (define add-point
-  (define (add-point-calc-x point m curve))
-  (define (add-point-calc-y point m curve))
-  (case-lambda
-    ((pointP pointQ curve)
-     (let ([m (calc-m pointP pointQ curve)])
-       xr = m2 - xp -xq mod p
+  (let (
+        [add-point-aux (lambda (m pointP pointQ curve)
+                         (let ([mod (lambda (x) (modulo x (elliptic-curve-p curve)))]
+                               [sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))])
+                           (let ([result-x (mod (- (sqr m) (point-x pointP) (point-x pointQ)))])
+                             (point result-x
+                                    (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))
+                                    )
+                             )
+                           )
+                         )
+                       ]
+        )
+    (case-lambda
+      ((pointP pointQ curve)
+       (add-point-aux (calc-m pointP pointQ curve) pointP pointQ curve)
        )
-     )
-    ((pointP curve)
-     (let ([m (calc-m pointP curve)]))
-     yr = yp + m (xr - xp) mod p
-     yr = yq + m (xr - xq) mod p
-     )
+      ((pointP curve)
+       (add-point-aux (calc-m pointP curve) pointP pointP curve)
+       )
+      )
     )
   )
 
@@ -317,11 +325,39 @@
     )
   )
 
+#|
 (define (sign message curve)
   (select-k curve)
   (mul-p )
 )
+|#
 
+; to be removed. these are here only for testing
 (when (devel) (random-seed 42))
-
 (number->string (random32byte) 16)
+(define (sign x)
+  (cond
+    ((zero? (point-y x)) "0")
+    ((<= (point-y x) (arithmetic-shift (elliptic-curve-p bitcoin-curve) -1)) "-")
+    (else "+")
+    )
+  )
+
+(define x
+  (let ([firstrun #t]
+        [prev-result 0]
+        )
+    (lambda ()
+      (if firstrun
+        (begin
+          (set! prev-result (add-point bc_G bitcoin-curve))
+          (set! firstrun #f)
+          )
+        (set! prev-result (add-point prev-result bc_G bitcoin-curve))
+        )
+      (printf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign prev-result) (point-y prev-result))
+      )
+    )
+  )
+
+

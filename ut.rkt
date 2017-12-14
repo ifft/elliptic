@@ -3,6 +3,13 @@
 (parameterize ([debug (if (getenv "DEBUG") #t #f)])
 (define primes '(13 17 19 23 101 103))
 
+;;;;; add-point 1 ;;;;;
+; TODO find test cases elsewhere
+(check-equal? (point-x (add-point bc_G bitcoin-curve)) 89565891926547004231252920425935692360644145829622209833684329913297188986597)
+(check-equal? (point-y (add-point bc_G bitcoin-curve)) 103633689937622365100603176395974509217114616778598935862658712053120463017733)
+;;;;; add-point 2 ;;;;;
+; TODO find test cases elsewhere
+
 ;;;;; binary mul ;;;;;
 (for ([a (in-range 1 10)]
       )
@@ -74,8 +81,7 @@
 (for-each 
   (lambda (p)
     (let loop ([i 2])
-      (when
-        (< i p)
+      (when (< i p)
         (begin
           (check-equal? (sqrt-p (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
           (loop (add1 i))
