@@ -26,7 +26,7 @@
 (define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G bc_n))
 (define test-curve (elliptic-curve 2 3 97 (point 3 6) 0))
 
-(define (binary-op x n inc-carry op-step mod_prime unity_element)
+(define (binary-op x n inc-carry op-step mod_prime unity_element) ; TODO eliminate mod_prime
   (let loop (
              [firstrun #t]
              [carry 1]
@@ -50,7 +50,18 @@
       )
     )
   )
-
+; 0P 1P 2P
+; 2P:  carry == P. > P
+; c=P r=P 2
+;  > c=2P r=P 1
+;
+;  P 0 5
+;  > P P 4
+;  >> 2P P 2
+;  >>> 4P P 1
+;  >>>> 8P 5P 0
+;  op-step   := add-point
+;  inc-carry := 
 (define (binary-mul x n) (binary-op x n
                                     (lambda (carry) (* 2 carry))
                                     +
@@ -72,6 +83,22 @@
                                  (lambda (x) (modulo x p))
                                  ))
 
+;(define (binary-op x n inc-carry op-step mod_prime unity_element)
+#|
+(define (scalar-mul n point curve)
+  (binary-op point n
+             (lambda (x)
+               ;inc
+               )
+             (lambda (x y)
+               ;add
+               (point-add )
+               )
+             mod
+             ; ???
+             (elliptic-curve-G curve))
+  )
+|#
 (define (factor-2 x)
   (let loop ([x x] [q 0])
     (cond
