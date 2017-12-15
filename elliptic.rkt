@@ -19,10 +19,10 @@
  )
 )
 
-(struct point (x y))
+(struct point (x y) #:transparent)
 (define bc_G (point bc_G_x bc_G_y))
 
-(struct elliptic-curve (a b p G n))
+(struct elliptic-curve (a b p G n) #:transparent)
 (define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G bc_n))
 
 (define (binary-op x n inc-carry op-step mod_prime unity_element)
@@ -103,6 +103,14 @@
       )
     )
   )
+
+(define (negate point curve)
+ (point (point-x point)
+  (modulo (- (elliptic-curve-p curve)
+             (point-y point))
+          (elliptic-curve-p curve))
+  )
+)
 
 ; Tonelli-Shanks algorithm
 (define (sqrt-p n p)
@@ -206,7 +214,7 @@
          [pow3 (lambda (x) (pow-p x 3 p))]
          [mod (lambda (x) (modulo x p))]
          [sqrt (lambda (x) (sqrt-p x p))]
-        )
+         )
     (sqrt (+ (pow3 x) (* a x) b))
     )
   )
@@ -222,6 +230,7 @@
                                )
                            (case-lambda
                              ((pointP)
+                              (dprintf "c-l 1~n")
                               (mod (* (+ (* 3
                                             (sqr (point-x pointP)))
                                          a)
@@ -230,6 +239,7 @@
                                    )
                               )
                              ((pointP pointQ)
+                              (dprintf "c-l 2~n")
                               (mod (* (- (point-y pointP) (point-y pointQ))
                                       (inv (- (point-x pointP) (point-x pointQ))))
 
@@ -241,7 +251,7 @@
                        )])
     (case-lambda
       ((pointP curve) ((calc-m-base curve) pointP))
-      ((pointP pointQ curve) ((calc-m-base curve) pointP pointQ))
+      ((pointP pointQ curve) (dprintf "calc-m p: ~a~nq: ~a~n" pointP pointQ) ((calc-m-base curve) pointP pointQ))
       )
     )
   )
@@ -251,10 +261,15 @@
         [add-point-aux (lambda (m pointP pointQ curve)
                          (let ([mod (lambda (x) (modulo x (elliptic-curve-p curve)))]
                                [sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))])
-                           (let ([result-x (mod (- (sqr m) (point-x pointP) (point-x pointQ)))])
-                             (point result-x
-                                    (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))
-                                    )
+                           (let* (
+                                  [result-x (mod (- (sqr m) (point-x pointP) (point-x pointQ)))]
+                                  [result-y-1 (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))]
+                                  [result-y-2 (mod (+ (point-y pointQ) (* m (- result-x (point-x pointQ)))))] ; TODO remove
+                                  )
+                             (unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
+                             (unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
+                             (unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
+                             (point result-x result-y-1)
                              )
                            )
                          )
@@ -325,6 +340,16 @@
     )
   )
 
+(define (validate point curve)
+  (let ([y12 (calc-y (point-x point) curve)])
+    (and
+      (or (equal? (point-y point) (car y12)) (equal? (point-y point) (cadr y12)))
+      (< (point-x point) (elliptic-curve-p curve))
+      (< (point-y point) (elliptic-curve-p curve))
+      )
+    )
+  )
+
 #|
 (define (sign message curve)
   (select-k curve)
@@ -348,6 +373,8 @@
         [prev-result 0]
         )
     (lambda ()
+     (dprintf "x prev-result: ~a~n" prev-result)
+     (dprintf "x firstrun ~a~n" firstrun)
       (if firstrun
         (begin
           (set! prev-result (add-point bc_G bitcoin-curve))
