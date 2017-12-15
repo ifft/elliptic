@@ -11,7 +11,7 @@
 ;;;;; add-point 1 ;;;;;
 ; TODO find test cases elsewhere
 (check-equal? (point-x (add-point bc_G bitcoin-curve)) 89565891926547004231252920425935692360644145829622209833684329913297188986597)
-(check-equal? (point-y (add-point bc_G bitcoin-curve)) 103633689937622365100603176395974509217114616778598935862658712053120463017733)
+(check-equal? (point-y (add-point bc_G bitcoin-curve)) 12158399299693830322967808612713398636155367887041628176798871954788371653930)
 ;;;;; add-point 2 ;;;;;
 ; TODO find test cases elsewhere
 

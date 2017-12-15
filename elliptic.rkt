@@ -24,6 +24,7 @@
 
 (struct elliptic-curve (a b p G n) #:transparent)
 (define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G bc_n))
+(define test-curve (elliptic-curve 2 3 97 (point 3 6) 0))
 
 (define (binary-op x n inc-carry op-step mod_prime unity_element)
   (let loop (
@@ -33,10 +34,10 @@
              [r0 x]
              [n n]
              )
-    (dprintf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
+    ;(dprintf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
     (let ([carry (if firstrun r0 (inc-carry carry))]
           [>> (lambda (x) (arithmetic-shift x -1))])
-      (dprintf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
+      ;(dprintf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
         ((zero? n) result)
         (else
@@ -241,7 +242,7 @@
                              ((pointP pointQ)
                               (dprintf "c-l 2~n")
                               (mod (* (- (point-y pointP) (point-y pointQ))
-                                      (inv (- (point-x pointP) (point-x pointQ))))
+                                      (inv (mod (- (point-x pointP) (point-x pointQ)))))
 
                                    )
                               )
@@ -263,12 +264,21 @@
                                [sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))])
                            (let* (
                                   [result-x (mod (- (sqr m) (point-x pointP) (point-x pointQ)))]
-                                  [result-y-1 (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))]
+                                  ;[result-y-1 (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))]
+                                  [result-y-1 (- 
+                                                (elliptic-curve-p curve)
+                                                (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))
+                                                )]
                                   [result-y-2 (mod (+ (point-y pointQ) (* m (- result-x (point-x pointQ)))))] ; TODO remove
+                                  [derivedy1 (car  (calc-y result-x curve))]
+                                  [derivedy2 (cadr (calc-y result-x curve))]
                                   )
                              (unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
                              (unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
-                             (unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
+                             ;(unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
+                             (dprintf "add-point~nderived:~n~a~n~a~ncalcd:~n~a~n~a~n"
+                              derivedy1 derivedy2 result-y-1 result-y-2
+                              )
                              (point result-x result-y-1)
                              )
                            )
@@ -360,10 +370,10 @@
 ; to be removed. these are here only for testing
 (when (devel) (random-seed 42))
 (number->string (random32byte) 16)
-(define (sign x)
+(define (sign x curve)
   (cond
     ((zero? (point-y x)) "0")
-    ((<= (point-y x) (arithmetic-shift (elliptic-curve-p bitcoin-curve) -1)) "-")
+    ((<= (point-y x) (arithmetic-shift (elliptic-curve-p curve) -1)) "-")
     (else "+")
     )
   )
@@ -382,7 +392,7 @@
           )
         (set! prev-result (add-point prev-result bc_G bitcoin-curve))
         )
-      (printf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign prev-result) (point-y prev-result))
+      (printf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign prev-result bitcoin-curve) (point-y prev-result))
       )
     )
   )
