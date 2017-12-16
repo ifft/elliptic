@@ -100,4 +100,8 @@
 ; calc-y
 (check-equal? (car (calc-y bc_G_x bitcoin-curve)) bc_G_y)
 
+;;;;; scalar-mul ;;;;;
+;mul with 0
+;mul up-to 128, check with repeated addition operator
+
 )

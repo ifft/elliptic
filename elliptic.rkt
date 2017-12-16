@@ -35,11 +35,12 @@
              [n n]
              )
     ;(dprintf "binary-op ~a ~a ~a ~a ~n" carry result r0 n)
-    (let ([carry (if firstrun r0 (inc-carry carry))]
-          [>> (lambda (x) (arithmetic-shift x -1))])
+    (let* ([stop? (zero? n)]
+           [carry (if stop? 0 (if firstrun r0 (inc-carry carry)))]
+           [>> (lambda (x) (arithmetic-shift x -1))])
       ;(dprintf "binary-op carry: ~a result: ~a r0: ~a n: ~a~n" carry result r0 n)
       (cond
-        ((zero? n) result)
+        (stop? result)
         (else
           (if (= (modulo n 2) 0)
             (loop #f carry result r0 (>> n))
@@ -50,18 +51,9 @@
       )
     )
   )
-; 0P 1P 2P
-; 2P:  carry == P. > P
-; c=P r=P 2
-;  > c=2P r=P 1
-;
-;  P 0 5
-;  > P P 4
-;  >> 2P P 2
-;  >>> 4P P 1
-;  >>>> 8P 5P 0
-;  op-step   := add-point
-;  inc-carry := 
+; inc-carry: add-point carry carry
+; op-step(c,res): add-point carry result
+; r0 = P
 (define (binary-mul x n) (binary-op x n
                                     (lambda (carry) (* 2 carry))
                                     +
@@ -83,22 +75,22 @@
                                  (lambda (x) (modulo x p))
                                  ))
 
-;(define (binary-op x n inc-carry op-step mod_prime unity_element)
-#|
 (define (scalar-mul n point curve)
   (binary-op point n
-             (lambda (x)
-               ;inc
+             (lambda (carry)
+               (add-point carry curve)
                )
-             (lambda (x y)
-               ;add
-               (point-add )
+             (lambda (carry result)
+               (if (equal? result (point 0 0))
+                 point
+                 (add-point result carry curve)
+                 )
                )
-             mod
-             ; ???
-             (elliptic-curve-G curve))
+             identity
+             (point 0 0)
+             )
   )
-|#
+
 (define (factor-2 x)
   (let loop ([x x] [q 0])
     (cond
