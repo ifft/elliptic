@@ -102,6 +102,7 @@
 
 ;;;;; scalar-mul ;;;;;
 ;mul with 0
+(check-equal? (scalar-mul bc_G 0 bitcoin-curve) (point 0 0))
 ;mul up-to 128, check with repeated addition operator
 
 )

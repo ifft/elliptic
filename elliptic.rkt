@@ -75,14 +75,14 @@
                                  (lambda (x) (modulo x p))
                                  ))
 
-(define (scalar-mul n point curve)
-  (binary-op point n
+(define (scalar-mul p n curve)
+  (binary-op p n
              (lambda (carry)
                (add-point carry curve)
                )
              (lambda (carry result)
                (if (equal? result (point 0 0))
-                 point
+                 p
                  (add-point result carry curve)
                  )
                )
