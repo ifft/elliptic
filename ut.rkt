@@ -103,7 +103,8 @@
 ;;;;; scalar-mul ;;;;;
 ;mul with 0
 (check-equal? (scalar-mul bc_G 0 bitcoin-curve) (point 0 0))
-;mul up-to 128, check with repeated addition operator
+
+;check scalar-mul against repeated additions
 (for ([i (in-range 1 33)])
      (let ([rep
              (let repeated-add ([result bc_G]
@@ -123,7 +124,7 @@
                        )
                  )
                )])
-      (printf "res: ~a i: ~a~n" bc_G i)
+      (printf "checking scalar-mul ~a/~a~n" i 32)
        (check-equal? (scalar-mul bc_G i bitcoin-curve) rep)
        )
      )
