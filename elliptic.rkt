@@ -78,11 +78,13 @@
 (define (scalar-mul p n curve)
   (binary-op p n
              (lambda (carry)
+              (dprintf "inc-carry~n")
                (add-point carry curve)
                )
              (lambda (carry result)
+              (dprintf "carry-op result~a~np: ~a~n" result p)
                (if (equal? result (point 0 0))
-                 p
+                 carry
                  (add-point result carry curve)
                  )
                )
@@ -254,7 +256,7 @@
                               (mod (* (+ (* 3
                                             (sqr (point-x pointP)))
                                          a)
-                                      (inv (* 2 (point-y pointP)))
+                                      (inv (mod (* 2 (point-y pointP))))
                                       )
                                    )
                               )
@@ -283,18 +285,22 @@
                                [sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))])
                            (let* (
                                   [result-x (mod (- (sqr m) (point-x pointP) (point-x pointQ)))]
-                                  ;[result-y-1 (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))]
-                                  [result-y-1 (- 
-                                                (elliptic-curve-p curve)
-                                                (mod (+ (point-y pointP) (* m (- result-x (point-x pointP)))))
-                                                )]
-                                  [result-y-2 (mod (+ (point-y pointQ) (* m (- result-x (point-x pointQ)))))] ; TODO remove
+                                  [result-y-1 (mod (+ (- (elliptic-curve-p curve)
+                                                         (point-y pointP)
+                                                         )
+                                                      (mod (* m (- (point-x pointP) result-x)))
+                                                      ))]
+                                  [result-y-2 (mod (+ (- (elliptic-curve-p curve)
+                                                         (point-y pointQ)
+                                                         )
+                                                      (mod (* m (- (point-x pointQ) result-x)))
+                                                      ))]
                                   [derivedy1 (car  (calc-y result-x curve))]
                                   [derivedy2 (cadr (calc-y result-x curve))]
                                   )
                              (unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
                              (unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
-                             ;(unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
+                             (unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
                              (dprintf "add-point~nderived:~n~a~n~a~ncalcd:~n~a~n~a~n"
                               derivedy1 derivedy2 result-y-1 result-y-2
                               )
@@ -411,7 +417,7 @@
           )
         (set! prev-result (add-point prev-result bc_G bitcoin-curve))
         )
-      (printf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign prev-result bitcoin-curve) (point-y prev-result))
+      (dprintf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign prev-result bitcoin-curve) (point-y prev-result))
       )
     )
   )
