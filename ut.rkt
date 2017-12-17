@@ -104,5 +104,27 @@
 ;mul with 0
 (check-equal? (scalar-mul bc_G 0 bitcoin-curve) (point 0 0))
 ;mul up-to 128, check with repeated addition operator
-
+(for ([i (in-range 1 33)])
+     (let ([rep
+             (let repeated-add ([result bc_G]
+                                [n i]
+                                [firstrun? #t]
+                                )
+               (cond
+                 ((equal? n 1) result)
+                 (else (repeated-add
+                         (if firstrun?
+                           (add-point result bitcoin-curve)
+                           (add-point result bc_G bitcoin-curve)
+                           )
+                         (sub1 n)
+                         #f
+                         )
+                       )
+                 )
+               )])
+      (printf "res: ~a i: ~a~n" bc_G i)
+       (check-equal? (scalar-mul bc_G i bitcoin-curve) rep)
+       )
+     )
 )
