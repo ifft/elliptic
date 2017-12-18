@@ -1,4 +1,5 @@
 #lang racket
+(require sha)
 ;(require racket/random)
 (provide (all-defined-out))
 ;bitcoin's elliptic curve parameters
@@ -236,6 +237,7 @@
          [pow3 (lambda (x) (pow-p x 3 p))]
          [mod (lambda (x) (modulo x p))]
          [sqrt (lambda (x) (sqrt-p x p))]
+         [+ (lambda (a b c) (mod (+ a b c)))]
          )
     (sqrt (+ (pow3 x) (* a x) b))
     )
@@ -385,11 +387,10 @@
     )
   )
 
-
 (define (sign message key curve)
   (let* ([mod (lambda (x) (modulo x (elliptic-curve-p curve)))]
          [mul (lambda (x n) (scalar-mul x n curve))]
-         [inv (lambda (x) (inverse-of x (elliptic-curve-p) curve))]
+         [inv (lambda (x) (inverse-of x (elliptic-curve-p curve)))]
          [select-k (lambda () (select-k curve))]
          [+ (lambda (a b) (mod (+ a b) (elliptic-curve-p curve)))]
          [* (lambda (a b) (mod (* a b) (elliptic-curve-p curve)))]
@@ -406,7 +407,7 @@
                    [s (mod (* k^-1 (+ message (* r key))))])
               (cond
                 ((zero? s) (try-again (select-k)))
-                (else s)
+                (else (values r s))
                 )
               )
             )
@@ -415,6 +416,29 @@
       )
     )
   )
+
+(define (verify message r signature curve)
+  (let* ([mod (lambda (x) (modulo x (elliptic-curve-p curve)))]
+         [mul (lambda (x n) (scalar-mul x n curve))]
+         [inv (lambda (x) (inverse-of x (elliptic-curve-p curve)))]
+         [+ (lambda (a b) (mod (+ a b) (elliptic-curve-p curve)))]
+         [+p (lambda (a b) (add-point a b curve))]
+         [* (lambda (a b) (mod (* a b)))]
+         )
+    (let ([s^-1 (inv signature)])
+      (let* ([u1 (* s^-1 message)]
+             [u2 (* s^-1 r)]
+             [P (+p (mul (elliptic-curve-G curve) u1) (mul (elliptic-curve-G curve) message))]
+             )
+       (equal? r (point-x P))
+        )
+      )
+    )
+  )
+    ;Calculate the integer u1= s−1*z mod n
+    ;Calculate the integer u2=s−1*r mod n
+    ;Calculate the point P = u1*G + u2 * msg
+    ;The signature is valid only if r=xP mod n
 
 ; to be removed. these are here only for testing
 (when (devel) (random-seed 42))
