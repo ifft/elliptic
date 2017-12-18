@@ -385,17 +385,41 @@
     )
   )
 
-#|
-(define (sign message curve)
-  (select-k curve)
-  (mul-p )
-)
-|#
+
+(define (sign message key curve)
+  (let* ([mod (lambda (x) (modulo x (elliptic-curve-p curve)))]
+         [mul (lambda (x n) (scalar-mul x n curve))]
+         [inv (lambda (x) (inverse-of x (elliptic-curve-p) curve))]
+         [select-k (lambda () (select-k curve))]
+         [+ (lambda (a b) (mod (+ a b) (elliptic-curve-p curve)))]
+         [* (lambda (a b) (mod (* a b) (elliptic-curve-p curve)))]
+         )
+
+    (let try-again ([k (select-k)])
+      (let* ([P (mul (elliptic-curve-G curve) k)]
+             [r (point-x P)]
+             )
+        (cond
+          ((zero? r) (try-again (select-k)))
+          (else 
+            (let* ([k^-1 (inv k)]
+                   [s (mod (* k^-1 (+ message (* r key))))])
+              (cond
+                ((zero? s) (try-again (select-k)))
+                (else s)
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
 
 ; to be removed. these are here only for testing
 (when (devel) (random-seed 42))
 (number->string (random32byte) 16)
-(define (sign x curve)
+(define (sign-point x curve)
   (cond
     ((zero? (point-y x)) "0")
     ((<= (point-y x) (arithmetic-shift (elliptic-curve-p curve) -1)) "-")
@@ -417,7 +441,7 @@
           )
         (set! prev-result (add-point prev-result bc_G bitcoin-curve))
         )
-      (dprintf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign prev-result bitcoin-curve) (point-y prev-result))
+      (dprintf "x:  ~a~ny: ~a~a~n" (point-x prev-result) (sign-point prev-result bitcoin-curve) (point-y prev-result))
       )
     )
   )
