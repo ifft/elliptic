@@ -276,16 +276,15 @@
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
 
 (define (calc-y x curve)
+ (with-helper-funcs curve
   (let* ([a (elliptic-curve-a curve)]
          [b (elliptic-curve-b curve)]
          [p (elliptic-curve-p curve)]
          [pow3 (lambda (x) (pow-p x 3 p))]
-         [mod (lambda (x) (modulo x p))]
-         [sqrt (lambda (x) (sqrt-p x p))]
-         [+ (lambda (a b c) (mod (+ a b c)))]
          )
-    (sqrt (+ (pow3 x) (* a x) b))
+    (sqrt (+ (+ (pow3 x) (* a x)) b))
     )
+  )
   )
 
 (define calc-m 
@@ -328,32 +327,31 @@
 (define add-point
   (let (
         [add-point-aux (lambda (m pointP pointQ curve)
-                         (let ([mod (lambda (x) (modulo x (elliptic-curve-p curve)))]
-                               [sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))])
-                           (let* (
-                                  [result-x (mod (- (sqr m) (point-x pointP) (point-x pointQ)))]
-                                  [result-y-1 (mod (+ (- (elliptic-curve-p curve)
-                                                         (point-y pointP)
-                                                         )
-                                                      (mod (* m (- (point-x pointP) result-x)))
-                                                      ))]
-                                  [result-y-2 (mod (+ (- (elliptic-curve-p curve)
-                                                         (point-y pointQ)
-                                                         )
-                                                      (mod (* m (- (point-x pointQ) result-x)))
-                                                      ))]
-                                  [derivedy1 (car  (calc-y result-x curve))]
-                                  [derivedy2 (cadr (calc-y result-x curve))]
-                                  )
-                             (unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
-                             (unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
-                             (unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
-                             (dprintf "add-point~nderived:~n~a~n~a~ncalcd:~n~a~n~a~n"
-                              derivedy1 derivedy2 result-y-1 result-y-2
-                              )
-                             (point result-x result-y-1)
-                             )
-                           )
+                         (with-helper-funcs curve
+                                            (let* (
+                                                   [result-x (- (- (sqr m) (point-x pointP)) (point-x pointQ))]
+                                                   [result-y-1 (+ (- (elliptic-curve-p curve)
+                                                                          (point-y pointP)
+                                                                          )
+                                                                       (* m (- (point-x pointP) result-x))
+                                                                       )]
+                                                   [result-y-2 (+ (- (elliptic-curve-p curve)
+                                                                     (point-y pointQ)
+                                                                     )
+                                                                  (* m (- (point-x pointQ) result-x))
+                                                                  )]
+                                                   [derivedy1 (car  (calc-y result-x curve))]
+                                                   [derivedy2 (cadr (calc-y result-x curve))]
+                                                   )
+                                              (unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
+                                              (unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
+                                              (unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
+                                              (dprintf "add-point~nderived:~n~a~n~a~ncalcd:~n~a~n~a~n"
+                                                       derivedy1 derivedy2 result-y-1 result-y-2
+                                                       )
+                                              (point result-x result-y-1)
+                                              )
+                                            )
                          )
                        ]
         )
