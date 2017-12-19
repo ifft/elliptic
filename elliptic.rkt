@@ -42,10 +42,10 @@
                                       [sqr   (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))]
                                       [pow   (lambda (x n) (pow-p x n (elliptic-curve-p curve)))]
                                       [sqrt  (lambda (x) (sqrt-p x (elliptic-curve-p curve)))]
-                                      [+     (lambda (x y) (mod (+ x y)))]   
+                                      [+     (lambda x   (mod (apply + x)))]   
                                       [+p    (case-lambda ((p) (add-point p (elliptic-curve-p curve))) ((p q) (add-point p q (elliptic-curve-p curve))))]
-                                      [-     (lambda (x y) (mod (- x y)))]
-                                      [*     (lambda (x y) (mod (* x y)))]
+                                      [-     (lambda x   (mod (apply - x)))]
+                                      [*     (lambda x  (mod (apply * x)))]
                                       [*p    (lambda (x n) (scalar-mul x n (elliptic-curve-p curve)))]
                                       )
 
@@ -282,7 +282,7 @@
          [p (elliptic-curve-p curve)]
          [pow3 (lambda (x) (pow-p x 3 p))]
          )
-    (sqrt (+ (+ (pow3 x) (* a x)) b))
+    (sqrt (+ (pow3 x) (* a x) b))
     )
   )
   )
@@ -329,7 +329,7 @@
         [add-point-aux (lambda (m pointP pointQ curve)
                          (with-helper-funcs curve
                                             (let* (
-                                                   [result-x (- (- (sqr m) (point-x pointP)) (point-x pointQ))]
+                                                   [result-x (- (sqr m) (point-x pointP) (point-x pointQ))]
                                                    [result-y-1 (+ (- (elliptic-curve-p curve)
                                                                           (point-y pointP)
                                                                           )

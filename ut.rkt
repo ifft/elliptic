@@ -3,6 +3,9 @@
 (parameterize ([debug (if (getenv "DEBUG") #t #f)])
 (define primes '(13 17 19 23 101 103))
 
+;;;;; negate ;;;;;
+;(check-equal? (negate bc_G bitcoin-curve) (point 0 0))
+
 ;;;;; crash test ;;;;;
 (x)
 (x)
@@ -47,11 +50,11 @@
             )
 
 ;;;;; pow ;;;;;
-(check-equal? (pow 5 0) 1)
-(check-equal? (pow 5 1) 5)
-(check-equal? (pow 5 2) 25)
-(check-equal? (pow 5 3) 125)
-(check-equal? (pow 5 4) (* 5 125))
+(check-equal? (bpow 5 0) 1)
+(check-equal? (bpow 5 1) 5)
+(check-equal? (bpow 5 2) 25)
+(check-equal? (bpow 5 3) 125)
+(check-equal? (bpow 5 4) (* 5 125))
 
 ;;;;; pow-p ;;;;;
 (check-equal? (pow-p 5 2 17) 8)
