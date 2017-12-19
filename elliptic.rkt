@@ -1,5 +1,6 @@
 #lang racket
 (require sha)
+(require (for-syntax racket/stxparam racket))
 ;(require racket/random)
 (provide (all-defined-out))
 ;bitcoin's elliptic curve parameters
@@ -19,6 +20,50 @@
    (when (debug) (apply printf x))
  )
 )
+
+(define-syntax (with-helper-funcs stx)
+  (syntax-case stx ()
+               [(with-helper-funcs curve body0 body ...)
+                (with-syntax (
+                              [mod (datum->syntax #'with-helper-funcs 'mod)]
+                              [inv(datum->syntax #'with-helper-funcs 'inv)]
+                              [sqr   (datum->syntax #'with-helper-funcs 'sqr)]
+                              [pow   (datum->syntax #'with-helper-funcs 'pow)]
+                              [sqrt  (datum->syntax #'with-helper-funcs 'sqrt)]
+                              [+     (datum->syntax #'with-helper-funcs '+)]
+                              [+p    (datum->syntax #'with-helper-funcs '+p)]
+                              [-     (datum->syntax #'with-helper-funcs '-)]
+                              [*     (datum->syntax #'with-helper-funcs '*)]
+                              [*p    (datum->syntax #'with-helper-funcs '*p)]
+                              )
+                             #'(let* (
+                                      [mod   (lambda (x) (modulo x (elliptic-curve-p curve)))]
+                                      [inv   (lambda (x) (inverse-of x (elliptic-curve-p curve)))]
+                                      [sqr   (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))]
+                                      [pow   (lambda (x n) (pow-p x n (elliptic-curve-p curve)))]
+                                      [sqrt  (lambda (x) (sqrt-p x (elliptic-curve-p curve)))]
+                                      [+     (lambda (x y) (mod (+ x y)))]   
+                                      [+p    (case-lambda ((p) (add-point p (elliptic-curve-p curve))) ((p q) (add-point p q (elliptic-curve-p curve))))]
+                                      [-     (lambda (x y) (mod (- x y)))]
+                                      [*     (lambda (x y) (mod (* x y)))]
+                                      [*p    (lambda (x n) (scalar-mul x n (elliptic-curve-p curve)))]
+                                      )
+
+                                 body0
+                                 body
+                                 ...
+                                 )
+                             )
+                ]
+               )
+  )
+
+
+(define (test)
+  (with-helper-funcs bitcoin-curve
+                     (mod 5)
+                     )
+  )
 
 (struct point (x y) #:transparent)
 (define bc_G (point bc_G_x bc_G_y))
@@ -142,7 +187,7 @@
     (let loop
       ([i 1])
       (cond
-        ((= 1 (powp t (pow 2 i))) i)
+        ((= 1 (powp t (bpow 2 i))) i)
         (else 
           (loop (add1 i)))
         )
@@ -163,7 +208,7 @@
                       (let*
                         (
                          [i (find-t^2^i_eq_1 t)]
-                         [b (powp c (pow 2 (- M i 1)))]
+                         [b (powp c (bpow 2 (- M i 1)))]
                          [M i]
                          [b^2 (powp b 2)]
                          [c b^2]
@@ -226,7 +271,7 @@
 (define (pow-p x n p) (binary-pow-modp x n p))
 (define (mul-p x y p) (modulo (binary-mul x y) p))
 
-(define (pow x n) (binary-pow x n))
+(define (bpow x n) (binary-pow x n))
 ; XXX for testing    
 (define (pow-p2 x p) (pow-p x (/ (sub1 p) 2) p))
 
