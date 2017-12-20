@@ -46,6 +46,7 @@
                               [+     (datum->syntax #'with-helper-funcs '+)]
                               [-     (datum->syntax #'with-helper-funcs '-)]
                               [*     (datum->syntax #'with-helper-funcs '*)]
+                              [neg   (datum->syntax #'with-helper-funcs 'neg)]
                               )
                              #'(let* (
                                       [mod   (lambda (x) (modulo x (elliptic-curve-p curve)))]
@@ -76,6 +77,7 @@
                                                  )
                                                )
                                              ]
+                                      [neg   (lambda (x) (neg x (elliptic-curve-p curve)))]
                                       )
 
                                  body0

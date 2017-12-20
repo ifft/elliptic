@@ -8,6 +8,7 @@
   inverse-of
   pow-p
   mul-p
+  neg
   )
 
 
@@ -161,4 +162,6 @@
   )
 
 (define (mul-p x y p) (modulo (binary-mul x y) p))
+
+(define (neg x p) (modulo (- p x) p))
 

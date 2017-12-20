@@ -4,7 +4,6 @@
 
 (provide 
   scalar-mul
-  negate
   calc-y
   calc-m 
   add-point
@@ -46,15 +45,6 @@
              (point 0 0)
              )
   )
-
-(define (negate point curve)
- (with-helper-funcs curve
- (point (point-x point)
-  (- (elliptic-curve-p curve)
-             (point-y point))
-  )
- )
-)
 
 (define (calc-y x curve)
  (with-helper-funcs curve
@@ -112,14 +102,10 @@
                          (with-helper-funcs curve
                                             (let* (
                                                    [result-x (- (sqr m) (point-x pointP) (point-x pointQ))]
-                                                   [result-y-1 (+ (- (elliptic-curve-p curve)
-                                                                          (point-y pointP)
-                                                                          )
-                                                                       (* m (- (point-x pointP) result-x))
-                                                                       )]
-                                                   [result-y-2 (+ (- (elliptic-curve-p curve)
-                                                                     (point-y pointQ)
-                                                                     )
+                                                   [result-y-1 (+ (neg (point-y pointP))
+                                                                  (* m (- (point-x pointP) result-x))
+                                                                  )]
+                                                   [result-y-2 (+ (neg (point-y pointQ))
                                                                   (* m (- (point-x pointQ) result-x))
                                                                   )]
                                                    [derivedy1 (car  (calc-y result-x curve))]

@@ -87,3 +87,7 @@
   primes
   )
 
+;;;;; neg ;;;;;
+(check-equal? (neg 16 17) 1)
+(check-equal? (neg 1 17) 16)
+
