@@ -26,15 +26,13 @@
                [(with-helper-funcs curve body0 body ...)
                 (with-syntax (
                               [mod (datum->syntax #'with-helper-funcs 'mod)]
-                              [inv(datum->syntax #'with-helper-funcs 'inv)]
+                              [inv (datum->syntax #'with-helper-funcs 'inv)]
                               [sqr   (datum->syntax #'with-helper-funcs 'sqr)]
                               [pow   (datum->syntax #'with-helper-funcs 'pow)]
                               [sqrt  (datum->syntax #'with-helper-funcs 'sqrt)]
                               [+     (datum->syntax #'with-helper-funcs '+)]
-                              [+p    (datum->syntax #'with-helper-funcs '+p)]
                               [-     (datum->syntax #'with-helper-funcs '-)]
                               [*     (datum->syntax #'with-helper-funcs '*)]
-                              [*p    (datum->syntax #'with-helper-funcs '*p)]
                               )
                              #'(let* (
                                       [mod   (lambda (x) (modulo x (elliptic-curve-p curve)))]
@@ -42,11 +40,28 @@
                                       [sqr   (lambda (x) (pow-p x 2 (elliptic-curve-p curve)))]
                                       [pow   (lambda (x n) (pow-p x n (elliptic-curve-p curve)))]
                                       [sqrt  (lambda (x) (sqrt-p x (elliptic-curve-p curve)))]
-                                      [+     (lambda x   (mod (apply + x)))]   
-                                      [+p    (case-lambda ((p) (add-point p (elliptic-curve-p curve))) ((p q) (add-point p q (elliptic-curve-p curve))))]
+                                      [+     (lambda x   
+                                               (cond
+                                                 ((andmap point? x)
+                                                  (if (null? (cdr x))
+                                                    (add-point (car x) curve)
+                                                    (add-point (car x) (cadr x) curve)
+                                                    )
+                                                  )
+                                                 (else (mod (apply + x)))
+                                                 )
+                                               )
+                                             ]   
                                       [-     (lambda x   (mod (apply - x)))]
-                                      [*     (lambda x  (mod (apply * x)))]
-                                      [*p    (lambda (x n) (scalar-mul x n (elliptic-curve-p curve)))]
+                                      [*     (lambda x
+                                               (cond
+                                                 ((and (point? (car x)) (number? (cadr x)))
+                                                  (scalar-mul (car x) (cadr x))
+                                                  )
+                                                 (else (mod (apply * x)))
+                                                 )
+                                               )
+                                             ]
                                       )
 
                                  body0
