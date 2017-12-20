@@ -1,0 +1,89 @@
+#lang racket
+(require rackunit "modulo-arith.rkt")
+(require/expose "modulo-arith.rkt" (binary-mul euclid++ binary-pow factor-2))
+(define bc_p #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F)
+(define primes '(13 17 19 23 101 103))
+
+;;;;; negate ;;;;;
+;(check-equal? (negate bc_G bitcoin-curve) (point 0 0))
+
+;;;;; binary mul ;;;;;
+(for ([a (in-range 1 10)]
+      )
+     (for ([b (in-range 1 10)])
+      (printf "~ax~a = ~a~n" a b (binary-mul a b))
+      (check-equal? (binary-mul a b) (* a b))
+          )
+     )
+
+;;;;; inverse-of ;;;;;
+(for-each (lambda (p)
+            (for ([i (in-range 1 p)])
+             (begin
+             (printf "inverse-of ~a ~a~n" i p)
+                 (check-equal? (mul-p i (inverse-of i p) p) 1
+                               )
+             )
+                 )
+            )
+          primes
+          )
+
+;;;;; euclid++ ;;;;;
+(let-values (
+             [(a b c) (euclid++ 240 46)]
+             )
+            (check-equal? a 2)
+            (check-equal? b -9)
+            (check-equal? c 47)
+            )
+
+;;;;; pow ;;;;;
+(check-equal? (binary-pow 5 0) 1)
+(check-equal? (binary-pow 5 1) 5)
+(check-equal? (binary-pow 5 2) 25)
+(check-equal? (binary-pow 5 3) 125)
+(check-equal? (binary-pow 5 4) (* 5 125))
+
+;;;;; pow-p ;;;;;
+(check-equal? (pow-p 5 2 17) 8)
+
+;;;;; factor-2 ;;;;;
+(let-values ([(s q) (factor-2 12)])
+(check-equal? 2 s)
+(check-equal? 3 q)
+)
+(let-values ([(s q) (factor-2 bc_p)])
+(check-equal? 0 s)
+(check-equal? bc_p q)
+)
+
+;;;;; find-non-residue ;;;;;
+(check-equal? (find-non-residue 17) 3)
+(check-equal? (find-non-residue 19) 2)
+(check-equal? (find-non-residue 23) 5)
+
+;bug fixed in pow_exp
+(check-equal? (pow-p 12 6 13) 1)
+
+
+; Tonelly-Shranks
+(check-equal? (sqrt-p 8 17) '(5 12))
+
+; some tests generated for Tonelly-Shranks
+
+; square it then root it
+(for-each 
+  (lambda (p)
+    (let loop ([i 2])
+      (when (< i p)
+        (begin
+          (check-equal? (sqrt-p (pow-p i 2 p) p) (sort `(,i ,(- p i)) <))
+          (loop (add1 i))
+          )
+        )
+      )
+    )
+  primes
+  )
+

@@ -18,7 +18,7 @@
 ;;;;; add-point 2 ;;;;;
 ; TODO find test cases elsewhere
 
-;;;;; binary mul ;;;;;
+;;;;; binary mul ;;;;;XXX2
 (for ([a (in-range 1 10)]
       )
      (for ([b (in-range 1 10)])
@@ -27,7 +27,7 @@
           )
      )
 
-;;;;; inverse-of ;;;;;
+;;;;; inverse-of ;;;;;XXX2
 (for-each (lambda (p)
             (for ([i (in-range 1 p)])
              (begin
