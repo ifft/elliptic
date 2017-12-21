@@ -1,6 +1,6 @@
 #lang racket
-(require "utility.rkt")
 (require "modulo-arith.rkt")
+(require "utility.rkt")
 
 (provide 
   scalar-mul
@@ -61,33 +61,26 @@
 
 (define calc-m 
   (let ([calc-m-base (lambda (curve)
-                       (let ([p (elliptic-curve-p curve)])
-                         (let (
-                               [mod (lambda (x) (modulo x p))]
-                               [sqr (lambda (x) (pow-p x 2 p))]
-                               [a   (elliptic-curve-a curve)]
-                               [inv (lambda (x) (inverse-of x p))]
-                               )
-                           (case-lambda
-                             ((pointP)
-                              (dprintf "c-l 1~n")
-                              (mod (* (+ (* 3
-                                            (sqr (point-x pointP)))
-                                         a)
-                                      (inv (mod (* 2 (point-y pointP))))
-                                      )
-                                   )
-                              )
-                             ((pointP pointQ)
-                              (dprintf "c-l 2~n")
-                              (mod (* (- (point-y pointP) (point-y pointQ))
-                                      (inv (mod (- (point-x pointP) (point-x pointQ)))))
-
-                                   )
-                              )
-                             )
-                           )
-                         )
+                       (with-helper-funcs curve
+                                          (let ([p   (elliptic-curve-p curve)]
+                                                [a   (elliptic-curve-a curve)])
+                                            (case-lambda
+                                              ((pointP)
+                                               (dprintf "c-l 1~n")
+                                               (* (+ (* 3
+                                                        (sqr (point-x pointP)))
+                                                     a)
+                                                  (inv (* 2 (point-y pointP)))
+                                                  )
+                                               )
+                                              ((pointP pointQ)
+                                               (dprintf "c-l 2~n")
+                                               (* (- (point-y pointP) (point-y pointQ))
+                                                  (inv (- (point-x pointP) (point-x pointQ))))
+                                               )
+                                              )
+                                            )
+                                          )
                        )])
     (case-lambda
       ((pointP curve) ((calc-m-base curve) pointP))
