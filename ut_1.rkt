@@ -25,7 +25,7 @@
 (check-equal? (scalar-mul bc_G 0 bitcoin-curve) (point 0 0))
 
 ;check scalar-mul against repeated additions
-(for ([i (in-range 1 33)])
+(for ([i (in-range 32 33)])
      (let ([rep
              (let repeated-add ([result bc_G]
                                 [n i]

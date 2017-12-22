@@ -11,10 +11,10 @@
   sign-point
   elliptic-curve
   elliptic-curve
-
-  debug
   (struct-out point)
   (struct-out elliptic-curve)
+
+  debug
   )
 
 (define debug (make-parameter #t))

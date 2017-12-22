@@ -2,7 +2,10 @@
 (require "utility.rkt")
 (require "modulo-arith.rkt")
 (require "elliptic-arith.rkt")
-(provide (all-defined-out))
+(require sha)
+(provide sign
+         verify
+         select-k)
 
 (define (sign message key curve)
  (with-helper-funcs curve
