@@ -113,35 +113,35 @@
                               [neg   (datum->syntax #'define-helper-funcs 'neg)]
                               )
                              #'(define mod (lambda (x) (modulo x (elliptic-curve-p curve))))
-                               (define inv (lambda (x) (inverse-of x (elliptic-curve-p curve))))
-                               (define sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve))))
-                               (define pow (lambda (x n) (pow-p x n (elliptic-curve-p curve))))
-                               (define sqrt (lambda (x) (sqrt-p x (elliptic-curve-p curve))))
-                               (define +    (lambda x   
-                                              (cond
-                                                ((andmap point? x)
-                                                 (if (null? (cdr x))
-                                                   (add-point (car x) curve)
-                                                   (add-point (car x) (cadr x) curve)
-                                                   )
+                             (define inv (lambda (x) (inverse-of x (elliptic-curve-p curve))))
+                             (define sqr (lambda (x) (pow-p x 2 (elliptic-curve-p curve))))
+                             (define pow (lambda (x n) (pow-p x n (elliptic-curve-p curve))))
+                             (define sqrt (lambda (x) (sqrt-p x (elliptic-curve-p curve))))
+                             (define +    (lambda x   
+                                            (cond
+                                              ((andmap point? x)
+                                               (if (null? (cdr x))
+                                                 (add-point (car x) curve)
+                                                 (add-point (car x) (cadr x) curve)
                                                  )
-                                                (else (mod (apply + x)))
-                                                )
-                                              )
-                                 )
-                                 (define - (lambda x   (mod (apply - x))))
-                                 (define * (lambda x
-                                             (cond
-                                               ((and (point? (car x)) (number? (cadr x)))
-                                                (scalar-mul (car x) (cadr x))
-                                                )
-                                               ;TODO use mod-p without the flexibility of 'apply'
-                                               (else (mod (apply * x)))
                                                )
-                                             )
-                                   )
-                                  (define neg   (lambda (x) (neg x (elliptic-curve-p curve))))
-
-                                 )
+                                              (else (mod (apply + x)))
+                                              )
+                                            )
+                               )
+                             (define - (lambda x   (mod (apply - x))))
+                             (define * (lambda x
+                                         (cond
+                                           ((and (point? (car x)) (number? (cadr x)))
+                                            (scalar-mul (car x) (cadr x))
+                                            )
+                                           ;TODO use mod-p without the flexibility of 'apply'
+                                           (else (mod (apply * x)))
+                                           )
+                                         )
+                               )
+                             (define neg   (lambda (x) (neg x (elliptic-curve-p curve))))
+                             )
+                ]
                )
   )
