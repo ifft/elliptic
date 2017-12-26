@@ -23,6 +23,7 @@
 (check-equal? (padhex 65536) "010000")
 
 ;;;;; expand-message ;;;;;
+; expand sequence shorter than 512 bytes
 (let ([message #"message"])
   (check-equal?
     (expand-message message)
@@ -30,7 +31,15 @@
     )
   )
 
-(let* ([message (bytes-append #"message" (make-bytes 512 0))]
+; do not expand exactly 512 byte long sequence
+(let ([message (bytes-append #"message" (make-bytes 505 42))])
+  (check-equal? (bytes-length message) 512) ; sanity
+  (check-equal? (expand-message message)
+                message
+                )
+  )
+
+(let* ([message (bytes-append #"message" (make-bytes 512 42))]
        [expanded (expand-message message)]
        )
   (check-equal? (bytes-length expanded) 1024)
@@ -54,3 +63,46 @@
 
 ;;;;; addstopbit ;;;;;
 (check-equal? (addstopbit #"message") (bytes-append #"message" (bytes #x80)))
+
+;;;;; padmessage ;;;;;
+; pad once, len fits
+(let* (
+      [message #"message"]
+      [len (bytes-length message)]
+      )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes (- 511 len 8) 0) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+; pad twice, len fits
+(let* (
+      [message (bytes-append #"message" (make-bytes 512 42))]
+      [len (bytes-length message)]
+      )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes (- 1023 len 8) 0) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+
+; pad once, len does not fit
+(let* (
+      [message (bytes-append #"message" (make-bytes 504 42))]
+      [len (bytes-length message)]
+      )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes 504 0) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+; pad twice, len does not fit
+(let* (
+      [message (bytes-append #"message" (make-bytes 1016 42))]
+      [len (bytes-length message)]
+      )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes 504 0) (integer->integer-bytes len 8 #f #f))
+    )
+  )

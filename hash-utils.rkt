@@ -1,6 +1,8 @@
 #lang racket
 (provide (all-defined-out))
 
+(define blocklen 512)
+
 (define (padhex num)
   (let ([raw (format "~x" num)])
     (if
@@ -11,13 +13,22 @@
     )
   )
 
-(define (expand-message msgbytes)
-  (bytes-append msgbytes
-                (make-bytes 
-                  (- 512 (modulo (bytes-length msgbytes) 512))
-                  0
+; expands message to the next boundary
+; when force-at-boundary-length? is #t, message will be expanded when length mod blocklen == 0
+(define (expand-message msgbytes (force-at-boundary-length? #f))
+  (let ([f
+          (if force-at-boundary-length?
+            identity
+            (lambda (x) (modulo x blocklen))
+            )
+          ])
+    (bytes-append msgbytes
+                  (make-bytes 
+                    (f (- blocklen (modulo (bytes-length msgbytes) blocklen)))
+                    0
+                    )
                   )
-                )
+    )
   )
 
 ; adds the stop-bit to the end of the message
@@ -36,5 +47,20 @@
   )
 
 ; pad message
-(define (padmessage message)
+; TODO implement it with ports
+(define (padmessage msgbytes)
+  (let* (
+         [len (bytes-length msgbytes)]
+         [msgbytes (addstopbit msgbytes)]
+         [extra-padding-needed? (< (- blocklen (modulo len blocklen)) 8)]
+         )
+    (insert-msglen
+      (expand-message 
+        (if extra-padding-needed? (expand-message msgbytes #t) msgbytes)
+        )
+      len
+      )
+    )
   )
+
+
