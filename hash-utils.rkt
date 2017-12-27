@@ -3,16 +3,6 @@
 
 (define blocklen 512)
 
-(define (padhex num)
-  (let ([raw (format "~x" num)])
-    (if
-      (not (zero? (modulo (string-length raw) 2)))
-      (string-append "0" raw)
-      raw
-      )
-    )
-  )
-
 ; expands message to the next boundary
 ; when force-at-boundary-length? is #t, message will be expanded when length mod blocklen == 0
 (define (expand-message msgbytes (force-at-boundary-length? #f))
@@ -63,4 +53,8 @@
     )
   )
 
-
+(define (int512->number msgbytes)
+  (for ([i (in-range 8)])
+       (integer-bytes->integer chunk #f #t 0 8)
+       )
+  )

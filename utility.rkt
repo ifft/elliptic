@@ -70,7 +70,7 @@
                                       [*     (lambda x
                                                (cond
                                                  ((and (point? (car x)) (number? (cadr x)))
-                                                  (scalar-mul (car x) (cadr x))
+                                                  (scalar-mul (car x) (cadr x) curve)
                                                   )
                                       ;TODO use mod-p without the flexibility of 'apply'
                                                  (else (mod (apply * x)))
@@ -135,7 +135,7 @@
                                  (define *     (lambda x
                                                  (cond
                                                    ((and (point? (car x)) (number? (cadr x)))
-                                                    (scalar-mul (car x) (cadr x))
+                                                    (scalar-mul (car x) (cadr x) curve)
                                                     )
                                                    ;TODO use mod-p without the flexibility of 'apply'
                                                    (else (mod (apply * x)))
@@ -147,5 +147,15 @@
                              )
                 )
                )
+  )
+
+(define (padhex num)
+  (let ([raw (format "~x" num)])
+    (if
+      (not (zero? (modulo (string-length raw) 2)))
+      (string-append "0" raw)
+      raw
+      )
+    )
   )
 

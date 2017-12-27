@@ -1,6 +1,8 @@
 #lang racket
 (require rackunit "elliptic-arith.rkt")
+(require "utility.rkt")
 (require "bitcoin-curve.rkt")
+(require "modulo-arith.rkt")
 (parameterize ([debug (if (getenv "DEBUG") #t #f)])
 (define primes '(13 17 19 23 101 103))
 
@@ -25,7 +27,7 @@
 (check-equal? (scalar-mul bc_G 0 bitcoin-curve) (point 0 0))
 
 ;check scalar-mul against repeated additions
-(for ([i (in-range 1 33)])
+(for ([i (in-range 32 33)])
      (let ([rep
              (let repeated-add ([result bc_G]
                                 [n i]
@@ -50,3 +52,19 @@
      )
 
 )
+
+;;;;; check if common secret could be calculated ;;;;;
+(with-helper-funcs
+  bitcoin-curve
+  (let (
+        [alicepriv 36281381264312944114660412731460996624433877351060966911175032316224544298925]
+        [bobpriv 109377126302409292064350767041684127893334715379768434484720197907651178515954]
+        )
+    (let (
+          [alicepub (* bc_G alicepriv)] 
+          [bobpub   (* bc_G bobpriv)]
+          )
+      (check-equal? (* bobpub alicepriv) (* alicepub bobpriv))
+      )                 
+    )
+  )

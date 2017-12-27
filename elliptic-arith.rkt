@@ -19,11 +19,6 @@
 
 (define debug (make-parameter #t))
 (define devel (make-parameter #t))
-(define dprintf
- (lambda x
-   (when (debug) (apply printf x))
- )
-)
 
 (struct point (x y) #:transparent)
 (struct elliptic-curve (a b p G n) #:transparent)
@@ -31,11 +26,9 @@
 (define (scalar-mul p n curve)
   (binary-op p n
              (lambda (carry)
-              (dprintf "inc-carry~n")
                (add-point carry curve)
                )
              (lambda (carry result)
-              (dprintf "carry-op result~a~np: ~a~n" result p)
                (if (equal? result (point 0 0))
                  carry
                  (add-point result carry curve)
@@ -48,7 +41,6 @@
 
 (define (calc-y x curve)
  (with-helper-funcs curve
-  ;(printf "calc-y ~a ~a~n" x curve)
   (let* ([a (elliptic-curve-a curve)]
          [b (elliptic-curve-b curve)]
          [p (elliptic-curve-p curve)]
@@ -66,7 +58,6 @@
                                                 [a   (elliptic-curve-a curve)])
                                             (case-lambda
                                               ((pointP)
-                                               (dprintf "c-l 1~n")
                                                (* (+ (* 3
                                                         (sqr (point-x pointP)))
                                                      a)
@@ -74,7 +65,6 @@
                                                   )
                                                )
                                               ((pointP pointQ)
-                                               (dprintf "c-l 2~n")
                                                (* (- (point-y pointP) (point-y pointQ))
                                                   (inv (- (point-x pointP) (point-x pointQ))))
                                                )
@@ -84,7 +74,7 @@
                        )])
     (case-lambda
       ((pointP curve) ((calc-m-base curve) pointP))
-      ((pointP pointQ curve) (dprintf "calc-m p: ~a~nq: ~a~n" pointP pointQ) ((calc-m-base curve) pointP pointQ))
+      ((pointP pointQ curve) ((calc-m-base curve) pointP pointQ))
       )
     )
   )
@@ -98,18 +88,13 @@
                                                    [result-y-1 (+ (neg (point-y pointP))
                                                                   (* m (- (point-x pointP) result-x))
                                                                   )]
-                                                   [result-y-2 (+ (neg (point-y pointQ))
-                                                                  (* m (- (point-x pointQ) result-x))
-                                                                  )]
-                                                   [derivedy1 (car  (calc-y result-x curve))]
-                                                   [derivedy2 (cadr (calc-y result-x curve))]
+                                                   ;[result-y-2 (+ (neg (point-y pointQ))
+                                                   ;               (* m (- (point-x pointQ) result-x))
+                                                   ;               )]
                                                    )
-                                              (unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
-                                              (unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
-                                              (unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
-                                              (dprintf "add-point~nderived:~n~a~n~a~ncalcd:~n~a~n~a~n"
-                                                       derivedy1 derivedy2 result-y-1 result-y-2
-                                                       )
+                                              ;(unless (validate (point result-x result-y-1) curve) (error 'add-point-not-valid1)) ; TODO remove
+                                              ;(unless (validate (point result-x result-y-2) curve) (error 'add-point-not-valid2)) ; TODO remove
+                                              ;(unless (equal? result-y-1 result-y-2) (error 'lofasz)) ; TODO remove
                                               (point result-x result-y-1)
                                               )
                                             )

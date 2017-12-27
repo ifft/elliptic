@@ -1,5 +1,6 @@
 #lang racket
 (require rackunit "hash-utils.rkt")
+(require rackunit "utility.rkt")
 
 ;;;;; RIPEMD 160 test vectors ;;;;;
 (define ripemd160-test-vectors

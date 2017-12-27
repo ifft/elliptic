@@ -5,21 +5,21 @@
 (require sha)
 (provide sign
          verify
-         select-k)
+         gen-priv-key)
 
 (define (sign message key curve)
  (with-helper-funcs curve
-  (let* ([select-k (lambda () (select-k curve))])
-   (let try-again ([k (select-k)])
+  (let* ([gen-priv-key (lambda () (gen-priv-key curve))])
+   (let try-again ([k (gen-priv-key)])
     (let* ([P (* (elliptic-curve-G curve) k)]
            [r (point-x P)]
           )
      (cond
-      ((zero? r) (try-again (select-k)))
+      ((zero? r) (try-again (gen-priv-key)))
       (else 
        (let ([s (* (inv k) (+ message (* r key)))])
         (cond
-         ((zero? s) (try-again (select-k)))
+         ((zero? s) (try-again (gen-priv-key)))
          (else (values r s))
         )
        )
@@ -62,7 +62,7 @@
     )
   )
 
-(define (select-k curve)
+(define (gen-priv-key curve)
   (let loop ([result (random32byte)])
     (cond
       ((and (< result (elliptic-curve-n curve))
