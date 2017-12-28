@@ -1,5 +1,6 @@
 #lang racket
 (require rackunit "hash-utils.rkt")
+(require rackunit "utility.rkt")
 
 ;;;;; RIPEMD 160 test vectors ;;;;;
 (define ripemd160-test-vectors
@@ -106,3 +107,22 @@
     (bytes-append message (bytes #x80) (make-bytes 504 0) (integer->integer-bytes len 8 #f #f))
     )
   )
+
+;;;;; n-byte-int->number ;;;;;
+(check-equal?
+  (n-byte-int->number 64 (bytes-append (bytes 1) (make-bytes 63 0)))
+  (arithmetic-shift #x01 (* 63 8))
+  )
+
+(check-equal?
+  (n-byte-int->number 64 (bytes-append (bytes 1 2) (make-bytes 61 0) (bytes 1)))
+  (+
+    (arithmetic-shift 1 (* 63 8))
+    (arithmetic-shift 2 (* 62 8))
+    1
+    )
+  )
+
+(check-exn exn:fail? (lambda () (n-byte-int->number 5 (make-bytes 5 0))))
+
+

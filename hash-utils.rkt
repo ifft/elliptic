@@ -3,16 +3,6 @@
 
 (define blocklen 512)
 
-(define (padhex num)
-  (let ([raw (format "~x" num)])
-    (if
-      (not (zero? (modulo (string-length raw) 2)))
-      (string-append "0" raw)
-      raw
-      )
-    )
-  )
-
 ; expands message to the next boundary
 ; when force-at-boundary-length? is #t, message will be expanded when length mod blocklen == 0
 (define (expand-message msgbytes (force-at-boundary-length? #f))
@@ -63,4 +53,27 @@
     )
   )
 
-
+(define (n-byte-int->number n msgbytes)
+  (let-values ([(ret x)
+                (let (
+                      [by-8-bytes (* 8 8)]
+                      [numsteps   (/ n 8)]
+                      )
+                 (unless (integer? numsteps) (error 'n-byte-int->number "n should be dividable by 8"))
+                  (for/fold
+                    (
+                     [number 0]
+                     [msg msgbytes]
+                     )
+                    ([i (in-range numsteps)])
+                    (values (+ (arithmetic-shift number by-8-bytes)
+                               (integer-bytes->integer msg #f #t 0 8)
+                               )
+                            (subbytes msg 8)
+                            )
+                    )
+                  )
+                ])
+              ret
+              )
+  )
