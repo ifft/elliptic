@@ -5,6 +5,7 @@
 (define bc_E_a 0)
 (define bc_E_b 7)
 (define bc_n #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141)
+(define bc_byte-length 32)
 (define bc_p #xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F)
 (define bc_G_long #x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8)
 
@@ -13,4 +14,4 @@
 
 (define bc_G (point bc_G_x bc_G_y))
 
-(define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G bc_n))
+(define bitcoin-curve (elliptic-curve bc_E_a bc_E_b bc_p bc_G bc_n bc_byte-length))

@@ -5,44 +5,61 @@
 (require sha)
 (provide sign
          verify
-         gen-priv-key)
+         gen-priv-key
+         )
+
+(define (truncate message curve)
+ (printf "msg: ~a~n" message)
+ (printf "~a" (* 8 (elliptic-curve-bytelen curve)))
+  (bitwise-and (sub1 (arithmetic-shift 1 (* 8 (elliptic-curve-bytelen curve)))) message)
+  )
 
 (define (sign message key curve)
  (with-helper-funcs curve
-  (let* ([gen-priv-key (lambda () (gen-priv-key curve))])
-   (let try-again ([k (gen-priv-key)])
-    (let* ([P (* (elliptic-curve-G curve) k)]
-           [r (point-x P)]
-          )
-     (cond
-      ((zero? r) (try-again (gen-priv-key)))
-      (else 
-       (let ([s (* (inv k) (+ message (* r key)))])
+  (let* (
+         [gen-priv-key (lambda () (gen-priv-key curve))]
+         [message (truncate message curve)]
+         )
+    (printf "sign~nmessage: ~a~nkey: ~a~ncurve: ~a~n" message key curve)
+    (let try-again ([k (gen-priv-key)])
+      (let* ([P (* (elliptic-curve-G curve) k)]
+             [r (point-x P)]
+             )
         (cond
-         ((zero? s) (try-again (gen-priv-key)))
-         (else (values r s))
+          ((zero? r) (try-again (gen-priv-key)))
+          (else 
+            (let ([s (* (inv k) (+ message (* r key)))])
+              (cond
+                ((zero? s) (try-again (gen-priv-key)))
+                (else (values r s))
+                )
+              )
+            )
+          )
         )
-       )
       )
-     )
     )
-   )
-  )
  )
  )
 
-(define (verify message r signature curve)
- (with-helper-funcs curve
-  (let ([s^-1 (inv signature)])
-   (let* ([u1 (* s^-1 message)]
-          [u2 (* s^-1 r)]
-          [P (+ (* (elliptic-curve-G curve) u1) (* (elliptic-curve-G curve) message))]
-         )
-    (equal? r (point-x P))
-   )
+(define (verify message r s pubkey curve)
+  (with-helper-funcs curve
+                     (let (
+                           [s^-1 (inv s)]
+                           [message (truncate message curve)]
+                           )
+                       (let* ([u1 (* s^-1 message)]
+                              [u2 (* s^-1 r)]
+                              [Gu1 (* (elliptic-curve-G curve) u1)]
+                              [Hu2 (* pubkey u2)]
+                              [P (+ Gu1 Hu2)]
+                              )
+                         (printf "message ~a~nr: ~a~ns: ~a~npubkey: ~a~nP: ~a~n" message r s pubkey P)
+                         (equal? r (point-x P))
+                         )
+                       )
+                     )
   )
- )
- )
 
 (define (random16bit)
  (random #xFFFF)

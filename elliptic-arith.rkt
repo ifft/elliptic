@@ -9,8 +9,6 @@
   add-point
   validate
   sign-point
-  elliptic-curve
-  elliptic-curve
   (struct-out point)
   (struct-out elliptic-curve)
 
@@ -21,7 +19,7 @@
 (define devel (make-parameter #t))
 
 (struct point (x y) #:transparent)
-(struct elliptic-curve (a b p G n) #:transparent)
+(struct elliptic-curve (a b p G n bytelen) #:transparent)
 
 (define (scalar-mul p n curve)
   (binary-op p n

@@ -53,17 +53,27 @@
     )
   )
 
-(define (int512->number msgbytes)
-  (for/fold
-    (
-     [number 0]
-     [msg msgbytes]
-     )
-    ([i (in-range 64)])
-    (values (+ (arithmetic-shift number (* 8 8))
-               (integer-bytes->integer msg #f #t 0 8)
-               )
-            (subbytes msg 8)
-            )
-    )
+(define (n-byte-int->number n msgbytes)
+  (let-values ([(ret x)
+                (let (
+                      [by-8-bytes (* 8 8)]
+                      [numsteps   (/ n 8)]
+                      )
+                 (unless (integer? numsteps) (error 'n-byte-int->number "n should be dividable by 8"))
+                  (for/fold
+                    (
+                     [number 0]
+                     [msg msgbytes]
+                     )
+                    ([i (in-range numsteps)])
+                    (values (+ (arithmetic-shift number by-8-bytes)
+                               (integer-bytes->integer msg #f #t 0 8)
+                               )
+                            (subbytes msg 8)
+                            )
+                    )
+                  )
+                ])
+              ret
+              )
   )

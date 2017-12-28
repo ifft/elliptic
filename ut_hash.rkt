@@ -108,9 +108,21 @@
     )
   )
 
-;;;;; int512->number ;;;;;
-;(check-equal? (int512->number (expand-message (bytes 1))) (arithmetic-shift #x01 (* 7 8)))
+;;;;; n-byte-int->number ;;;;;
+(check-equal?
+  (n-byte-int->number 64 (bytes-append (bytes 1) (make-bytes 63 0)))
+  (arithmetic-shift #x01 (* 63 8))
+  )
 
-(let-values ([(result a) (int512->number (bytes-append (bytes 1) (make-bytes 63 0)))])
-     (check-equal? result (arithmetic-shift #x01 (* 63 8)))
-)
+(check-equal?
+  (n-byte-int->number 64 (bytes-append (bytes 1 2) (make-bytes 61 0) (bytes 1)))
+  (+
+    (arithmetic-shift 1 (* 63 8))
+    (arithmetic-shift 2 (* 62 8))
+    1
+    )
+  )
+
+(check-exn exn:fail? (lambda () (n-byte-int->number 5 (make-bytes 5 0))))
+
+
