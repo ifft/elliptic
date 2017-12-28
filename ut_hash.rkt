@@ -107,3 +107,10 @@
     (bytes-append message (bytes #x80) (make-bytes 504 0) (integer->integer-bytes len 8 #f #f))
     )
   )
+
+;;;;; int512->number ;;;;;
+;(check-equal? (int512->number (expand-message (bytes 1))) (arithmetic-shift #x01 (* 7 8)))
+
+(let-values ([(result a) (int512->number (bytes-append (bytes 1) (make-bytes 63 0)))])
+     (check-equal? result (arithmetic-shift #x01 (* 63 8)))
+)

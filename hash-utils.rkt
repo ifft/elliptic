@@ -54,7 +54,16 @@
   )
 
 (define (int512->number msgbytes)
-  (for ([i (in-range 8)])
-       (integer-bytes->integer chunk #f #t 0 8)
-       )
+  (for/fold
+    (
+     [number 0]
+     [msg msgbytes]
+     )
+    ([i (in-range 64)])
+    (values (+ (arithmetic-shift number (* 8 8))
+               (integer-bytes->integer msg #f #t 0 8)
+               )
+            (subbytes msg 8)
+            )
+    )
   )
