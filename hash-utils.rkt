@@ -24,12 +24,12 @@
  (bytes-append msgbytes (bytes #x80))
   )
 
-; insert message length to the last extradatalen bytes.
+; insert message bit-length to the last extradatalen bytes.
 ; last extradatalen bytes will be unconditionally overwritten
-(define (insert-msglen msgbytes len)
+(define (insert-msglen msgbytes bit-len)
   (when (< (bytes-length msgbytes) extradatalen) (error 'insert-msglen "byte stream is too short"))
-  (let ([len (integer->integer-bytes len extradatalen #f)])
-    (bytes-append (subbytes msgbytes 0 (- (bytes-length msgbytes) 8)) len
+  (let ([bit-len (integer->integer-bytes bit-len extradatalen #f)])
+    (bytes-append (subbytes msgbytes 0 (- (bytes-length msgbytes) 8)) bit-len
                   )
     )
   )
@@ -38,10 +38,10 @@
 ; TODO implement it with ports
 (define (padmessage msgbytes)
   (let* (
-         [len (bytes-length msgbytes)]
+         [bit-len (* 8 (bytes-length msgbytes))]
          [msgbytes (addstopbit msgbytes)]
          )
-    (insert-msglen (expand-message msgbytes) len)
+    (insert-msglen (expand-message msgbytes) bit-len)
     )
   )
 

@@ -74,10 +74,13 @@
 (check-equal? (addstopbit #"message") (bytes-append #"message" (bytes #x80)))
 
 ;;;;; padmessage ;;;;;
+(define (bit-length message)
+  (* 8 (bytes-length message))
+  )
 ; pad to 64, stopbit fits, len fits
 (let* (
       [message #"message"]
-      [len (bytes-length message)]
+      [len (bit-length message)]
       )
   (check-equal?
     (padmessage message)
@@ -88,7 +91,7 @@
 ; pad to 128, stopbit doesn't fit
 (let* (
       [message (bytes-append #"message" (make-bytes (- 64 7) 0))]
-      [len (bytes-length message)]
+      [len (bit-length message)]
       )
   (check-equal?
     (padmessage message)
@@ -99,7 +102,7 @@
 ; pad to 128 stopbit fits, len fits
 (let* (
       [message (bytes-append #"message" (make-bytes 64 42))]
-      [len (bytes-length message)]
+      [len (bit-length message)]
       )
   (check-equal?
     (padmessage message)
@@ -110,7 +113,7 @@
 ; pad to 128, stopbit fits, len does not fit
 (let* (
       [message (bytes-append #"message" (make-bytes (- 64 7 1) 42))]
-      [len (bytes-length message)]
+      [len (bit-length message)]
       )
   (check-equal?
     (padmessage message)
@@ -121,7 +124,7 @@
 ; pad to 192 stopbit fits, len does not fit
 (let* (
       [message (bytes-append #"message" (make-bytes (- 128 7 1) 42))]
-      [len (bytes-length message)]
+      [len (bit-length message)]
       )
   (check-equal?
     (padmessage message)
@@ -134,7 +137,7 @@
 (let*
   (
    [message (bytes-append (make-bytes (sub1 (/ 448 8)) 42))]
-   [len (bytes-length message)]
+   [len (bit-length message)]
    )
   (check-equal?
     (padmessage message)
@@ -145,7 +148,7 @@
 (let*
   (
    [message (bytes-append (make-bytes (/ 448 8) 42))]
-   [len (bytes-length message)]
+   [len (bit-length message)]
    )
   (check-equal?
     (padmessage message)
