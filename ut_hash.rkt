@@ -1,7 +1,12 @@
 #lang racket
 (require rackunit "hash-utils.rkt")
 (require rackunit "utility.rkt")
-(require/expose "hash-utils.rkt"(expand-message insert-msglen addstopbit))
+(require/expose "hash-utils.rkt"
+                (expand-message
+                  insert-msglen
+                  addstopbit
+                  crot-dword-left)
+                )
 
 ;;;;; RIPEMD 160 test vectors ;;;;;
 (define ripemd160-test-vectors
@@ -173,4 +178,9 @@
 
 (check-exn exn:fail? (lambda () (n-byte-int->number 5 (make-bytes 5 0))))
 
-
+;;;;; crot-dword-left ;;;;;
+(check-exn exn:fail? (lambda () (crot-dword-left (expt 2 32) 1)))
+(check-equal? (crot-dword-left (expt 2 31) 1) 1)
+(check-equal? (crot-dword-left (expt 2 31) 5) (expt 2 4))
+(check-equal? (crot-dword-left #x12345678 4) #x23456781)
+(check-equal? (crot-dword-left #b00010010001101000101011001111000 10) #b11010001010110011110000001001000)

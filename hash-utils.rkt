@@ -69,3 +69,61 @@
               ret
               )
   )
+
+(define (ripemd160_f x y z)
+ (bitwise-xor x y z)
+ )
+
+(define (ripemd160_g x y z)
+  (bitwise-ior
+    (bitwise-and x y)
+    (bitwise-and
+      (bitwise-not x)
+      z
+      )
+    )
+  )
+
+(define (ripemd160_h x y z)
+  (bitwise-xor
+    (bitwise-ior
+      x
+      (bitwise-not y)
+      )
+    z
+    )
+  )
+
+(define (ripemd160_i x y z)
+  (bitwise-ior
+    (bitwise-and x z)
+    (bitwise-and
+      y
+      (bitwise-not z)
+      )
+    )
+  )
+
+(define (ripemd160_j x y z)
+  (bitwise-xor
+    x
+    (bitwise-ior
+      y
+      (bitwise-not z)
+      )
+    )
+  )
+
+(define (crot-dword-left x n)
+  (when (>= x (expt 2 32)) (error 'crot-dword-left "out of range"))
+  (bitwise-bit-field
+    (bitwise-ior
+      (arithmetic-shift x n)
+      (arithmetic-shift x (- (- 32 n)))
+      )
+    0
+    32
+    )
+  )
+
+;(define (F A B C D E X S))
