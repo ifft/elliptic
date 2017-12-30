@@ -1,6 +1,7 @@
 #lang racket
 (require rackunit "hash-utils.rkt")
 (require rackunit "utility.rkt")
+(require/expose "hash-utils.rkt"(expand-message insert-msglen addstopbit))
 
 ;;;;; RIPEMD 160 test vectors ;;;;;
 (define ripemd160-test-vectors
@@ -24,29 +25,36 @@
 (check-equal? (padhex 65536) "010000")
 
 ;;;;; expand-message ;;;;;
-; expand sequence shorter than 512 bytes
+; expand sequence shorter than 64 bytes
 (let ([message #"message"])
   (check-equal?
     (expand-message message)
-    (bytes-append message (make-bytes (- 512 (bytes-length message)) 0))
+    (bytes-append message (make-bytes (- 64 (bytes-length message)) 0))
     )
   )
 
-; do not expand exactly 512 byte long sequence
-(let ([message (bytes-append #"message" (make-bytes 505 42))])
-  (check-equal? (bytes-length message) 512) ; sanity
+; expand exactly 56 byte long sequence
+(let ([message (make-bytes 56 42)])
   (check-equal? (expand-message message)
-                message
+                (bytes-append message (make-bytes 8 0))
                 )
   )
 
-(let* ([message (bytes-append #"message" (make-bytes 512 42))]
+; expand twice when message longer than 56 byte
+(let ([message (make-bytes 57 42)])
+  (check-equal? (expand-message message)
+                (bytes-append message (make-bytes 7 0) (make-bytes 64 0))
+                )
+  )
+
+; expand twice 64 byte long sequence
+(let* ([message (make-bytes 64 42)]
        [expanded (expand-message message)]
        )
-  (check-equal? (bytes-length expanded) 1024)
+  (check-equal? (bytes-length expanded) 128)
   (check-equal?
     expanded
-    (bytes-append message (make-bytes (- 1024 (bytes-length message)) 0))
+    (bytes-append message (make-bytes 64 0))
     )
   )
 
@@ -66,45 +74,82 @@
 (check-equal? (addstopbit #"message") (bytes-append #"message" (bytes #x80)))
 
 ;;;;; padmessage ;;;;;
-; pad once, len fits
+; pad to 64, stopbit fits, len fits
 (let* (
       [message #"message"]
       [len (bytes-length message)]
       )
   (check-equal?
     (padmessage message)
-    (bytes-append message (bytes #x80) (make-bytes (- 511 len 8) 0) (integer->integer-bytes len 8 #f #f))
-    )
-  )
-; pad twice, len fits
-(let* (
-      [message (bytes-append #"message" (make-bytes 512 42))]
-      [len (bytes-length message)]
-      )
-  (check-equal?
-    (padmessage message)
-    (bytes-append message (bytes #x80) (make-bytes (- 1023 len 8) 0) (integer->integer-bytes len 8 #f #f))
+    (bytes-append message (bytes #x80) (make-bytes 48 0) (integer->integer-bytes len 8 #f #f))
     )
   )
 
-; pad once, len does not fit
+; pad to 128, stopbit doesn't fit
 (let* (
-      [message (bytes-append #"message" (make-bytes 504 42))]
+      [message (bytes-append #"message" (make-bytes (- 64 7) 0))]
       [len (bytes-length message)]
       )
   (check-equal?
     (padmessage message)
-    (bytes-append message (bytes #x80) (make-bytes 504 0) (integer->integer-bytes len 8 #f #f))
+    (bytes-append message (bytes #x80) (make-bytes (- 64 1 8) 0) (integer->integer-bytes len 8 #f #f))
     )
   )
-; pad twice, len does not fit
+
+; pad to 128 stopbit fits, len fits
 (let* (
-      [message (bytes-append #"message" (make-bytes 1016 42))]
+      [message (bytes-append #"message" (make-bytes 64 42))]
       [len (bytes-length message)]
       )
   (check-equal?
     (padmessage message)
-    (bytes-append message (bytes #x80) (make-bytes 504 0) (integer->integer-bytes len 8 #f #f))
+    (bytes-append message (bytes #x80) (make-bytes (- 64 16) 0) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+
+; pad to 128, stopbit fits, len does not fit
+(let* (
+      [message (bytes-append #"message" (make-bytes (- 64 7 1) 42))]
+      [len (bytes-length message)]
+      )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes 56 0) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+
+; pad to 192 stopbit fits, len does not fit
+(let* (
+      [message (bytes-append #"message" (make-bytes (- 128 7 1) 42))]
+      [len (bytes-length message)]
+      )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes 56) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+
+; some more testcases, inspired from RFC1321 MD5 docs: 3.1 "Append Padding Bits"
+; case 1: padding + length exactly fit
+(let*
+  (
+   [message (bytes-append (make-bytes (sub1 (/ 448 8)) 42))]
+   [len (bytes-length message)]
+   )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (integer->integer-bytes len 8 #f #f))
+    )
+  )
+; case 2: length doesn't fit
+(let*
+  (
+   [message (bytes-append (make-bytes (/ 448 8) 42))]
+   [len (bytes-length message)]
+   )
+  (check-equal?
+    (padmessage message)
+    (bytes-append message (bytes #x80) (make-bytes 7 0) (make-bytes 56 0) (integer->integer-bytes len 8 #f #f))
     )
   )
 
