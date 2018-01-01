@@ -202,20 +202,14 @@
 
 ; TODO organize these to structs
 ; TODO calculate these at phase level 1
-(struct branch (side functions magics wordselect rotselect) #:transparent)
-(define left-branch (branch 'left functions-left magic-left wordselect-left rotselect-left))
-(define right-branch (branch 'right functions-right magic-right wordselect-right rotselect-right))
+(struct branch (functions magics wordselect rotselect) #:transparent)
+(define left-branch (branch functions-left magic-left wordselect-left rotselect-left))
+(define right-branch (branch functions-right magic-right wordselect-right rotselect-right))
 (define machine `(,left-branch ,right-branch))
 
-; XXX get rid of it
-(define (dword+ a b)
-  (bitwise-bit-field (+ a b) 0 32)
-  )
-
-; XXX rename
-(define dword++
+(define dword+
   (lambda args
-    (bitwise-bit-field (apply + args))
+    (bitwise-bit-field (apply + args) 0 32)
     )
   )
 
@@ -274,11 +268,11 @@
      [(ar br cr dr er) (vector->values blocks-from-right)]
      )
     #(
-      (dword++ cl b)
-      (dword++ c dl er)
-      (dword++ d el ar)
-      (dword++ e al br)
-      (dword++ a bl cr)
+      (dword+ cl b)
+      (dword+ c dl er)
+      (dword+ d el ar)
+      (dword+ e al br)
+      (dword+ a bl cr)
       )
     )
   )
