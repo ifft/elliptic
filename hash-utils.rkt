@@ -6,6 +6,7 @@
 
 (define blocklen 64)
 (define extradatalen 8)
+(define number-of-functions 5)
 
 ; expands message+extradatalen to the next bloclen boundary
 (define (expand-message msgbytes)
@@ -164,17 +165,11 @@
  `#(,ripemd160_j ,ripemd160_i ,ripemd160_h ,ripemd160_g ,ripemd160_f)
 )
 
-(define machine `#(
-                   (,functions-left ,magic-left) ;left
-                   (,functions-right ,magic-right) ;right
-                   )
-  )
-
 ; TODO organize these to structs
 ; TODO calculate these at phase level 1
-(struct branch (functions magics wordselect rotselect) #:transparent)
-(define left-branch (branch functions-left magic-left wordselect-left rotselect-left))
-(define right-branch (branch functions-right magic-right wordselect-right rotselect-right))
+(struct branch (side functions magics wordselect rotselect) #:transparent)
+(define left-branch (branch 'left functions-left magic-left wordselect-left rotselect-left))
+(define right-branch (branch 'right functions-right magic-right wordselect-right rotselect-right))
 (define machine `(,left-branch ,right-branch))
 
 (define wordselect-left '#(
@@ -212,8 +207,16 @@
 			   )
   )
 
+; XXX get rid of it
 (define (dword+ a b)
   (bitwise-bit-field (+ a b) 0 32)
+  )
+
+; XXX rename
+(define dword++
+  (lambda args
+    (bitwise-bit-field (apply + args))
+    )
   )
 
 (define (perform-function fun magic a b c d e x s)
@@ -263,27 +266,88 @@
   )
 
 (define (compress msgbytes)
-;(define (calc-branch msgbytes branch blocks-state)
-;(define left-branch (branch functions-left magic-left wordselect-left rotselect-left))
-(let
- (vector->values ) ; XXX
- )
- (map
-  (lambda (branch)
-   (calc-branch msgbytes branch ?)
-   )
-  machine)
- )
+  (define (compress-aux a b c d e msgbytes)
+    (cond
+      ((< msgbytes blocklen) (assemble-result a b c d e))
+      (else
+       (compress-aux (calc-branch?) msgbytes)
+        )
+      )
+    )
+  )
 
-   ;FF(aa, bb, cc, dd, ee, X[ 0], 11);
-   ;FF(ee, aa, bb, cc, dd, X[ 1], 14);
-   ;FF(dd, ee, aa, bb, cc, X[ 2], 15);
-   ;FF(cc, dd, ee, aa, bb, X[ 3], 12);
+  (define (compress-aux-with-msgbytes msgbytes) (lambda (a b c d e) (compress-aux a b c d e msgbytes)))
 
-;#define JJJ(a, b, c, d, e, x, s)        {\
-;      (a) += J((b), (c), (d)) + (x) + 0x50a28be6UL;\
-;      (a) = ROL((a), (s)) + (e);\
-;      (c) = ROL((c), 10);\
-;   }
 
-;(define (F A B C D E X S))
+
+  (call-with-values (vector->values blockinit) (compress-aux-with-msgbytes msgbytes))
+  )
+
+  (define (merge-branch-results blockstates blocks-from-left blocks-from-right)
+    (let-values
+      (
+       [( a  b  c  d  e) (vector->values       blockstates)]
+       [(al bl cl dl el) (vector->values  blocks-from-left)]
+       [(ar br cr dr er) (vector->values blocks-from-right)]
+       )
+      #(
+        (dword++ cl b)
+        (dword++ c dl er)
+        (dword++ d el ar)
+        (dword++ e al br)
+        (dword++ a bl cr)
+        )
+      )
+    )
+
+(define (assemble-result final-blocks)
+  (bitwise-ior
+    (arithmetic-shift (vector-ref blocks 0) (* 4 32))
+    (arithmetic-shift (vector-ref blocks 1) (* 3 32))
+    (arithmetic-shift (vector-ref blocks 2) (* 2 32))
+    (arithmetic-shift (vector-ref blocks 3) 32)
+    (vector-ref blocks 3)
+    )
+  )
+
+(define (compress msgbytes)
+  (define (compress-aux msgbytes blockstates)
+    (let loop (
+               [msgbytes msgbytes]
+               [blockstates blockstates]
+               )
+      (cond
+        ((< (bytes-length msgbytes) blocklen) (assemble-result blockstates))
+        (else (let* ([new-blocks
+                       (map
+                         (lambda (branch)
+                           (let-values
+                             ( [(a b c d e)
+                                (calc-branch msgbytes branch blockstates)]
+                              )
+                             #(a b c d e)
+                             )
+                           )
+                         machine
+                         )
+                       ]
+                     [blocks-from-left (car new-blocks)]
+                     [blocks-from-right (cadr new-blocks)]
+                     [next-chunk (bitwise-bit-field 32 (* 8 (bytes-length msgbytes)))]
+                     )
+                )
+              (loop
+                next-chunk
+                (merge-branch-results
+                  blockstates
+                  blocks-from-left
+                  blocks-from-right
+                  )
+                )
+              )
+        )
+      )
+    )
+  (compress-aux msgbytes blockinit)
+  )
+

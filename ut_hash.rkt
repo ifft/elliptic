@@ -18,7 +18,7 @@
     #("abc" #x8eb208f7e05d987a9b044a8e98c6b087f15a0bfc)
     #("message digest"  #x5d0689ef49d2fae572b881b123a85ffa21595f36)
     #("abcdefghijklmnopqrstuvwxyz" #xf71c27109c692c1b56bbdceb5b9d2865b3708dbc)
-    #("abcdbcdefghijklmnopq" #x12a053384a9c0c88e405a06c27dcf49ada62eb2b)
+    #("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" #x12a053384a9c0c88e405a06c27dcf49ada62eb2b)
     #("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" #xb0e20b6e3116640286ed3a87a5713079b21f5189)
     #("12345678901234567890123456789012345678901234567890123456789012345678901234567890" #x9b752e45573d4b39f4dbd3323cab82bf63326bfb)
     )
