@@ -2,6 +2,7 @@
 (provide 
  padmessage
  n-byte-int->number
+ compress
 )
 
 (define blocklen 64)
@@ -309,7 +310,7 @@
                      ]
                    [blocks-from-left (car new-blocks)]
                    [blocks-from-right (cadr new-blocks)]
-                   [next-chunk (bitwise-bit-field 32 (* 8 (bytes-length msgbytes)))]
+                   [next-chunk (bitwise-bit-field msgbytes 32 (* 8 (bytes-length msgbytes)))]
                    )
               (loop
                 next-chunk
