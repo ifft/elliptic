@@ -7,7 +7,7 @@
 
 (define blocklen 64)
 (define extradatalen 8)
-(define number-of-functions 5)
+(define dword-size-in-bytes 4)
 
 ; expands message+extradatalen to the next bloclen boundary
 (define (expand-message msgbytes)
@@ -142,8 +142,8 @@
      #x00000000
      #x5A827999
      #x6ED9EBA1
-     #X8F1BBCDC
-     #XA953FD4E
+     #x8F1BBCDC
+     #xA953FD4E
      )
   )
 
@@ -225,8 +225,7 @@
   )
 
 (define (rotateboxes a b c d e)
-  (values e a b c d)
-  )
+ (values e a b c d))
 
 (define (calc-branch msgbytes branch blocks-state)
   (let-values ([(a0 b0 c0 d0 e0) (vector->values blocks-state)])
@@ -242,17 +241,20 @@
                  [iter (in-range 5)]
                  [ix (in-range 16)]
                  )
-                (let (
-                      [dword-index (* 32 (vector-ref (vector-ref (branch-wordselect branch) iter) ix))]
+                (let* (
+                      [dword-index (* dword-size-in-bytes (vector-ref (vector-ref (branch-wordselect branch) iter) ix))]
+                      [msg-as-int (integer-bytes->integer msgbytes #f #f dword-index (+ dword-index dword-size-in-bytes))]
                       [rotate-index (vector-ref (vector-ref (branch-rotselect branch) iter) ix)]
                       [function (vector-ref (branch-functions branch) iter)]
                       [magic (vector-ref (branch-magics branch) iter)]
                       )
                   (call-with-values
+                  (lambda ()
                     (perform-function
                       function magic a b c d e
-                      (bitwise-bit-field msgbytes dword-index (+ dword-index 32))
+                      msg-as-int
                       rotate-index)
+                    )
                     rotateboxes
                     )
                   )
@@ -264,17 +266,20 @@
 (define (merge-branch-results blockstates blocks-from-left blocks-from-right)
   (let-values
     (
+    ;   b  c  d  e  a
      [( a  b  c  d  e) (vector->values       blockstates)]
-     [(al bl cl dl el) (vector->values  blocks-from-left)]
-     [(ar br cr dr er) (vector->values blocks-from-right)]
+     ;[(al bl cl dl el) (vector->values  blocks-from-left)]
+     ;[(ar br cr dr er) (vector->values blocks-from-right)]
+     [(bl cl dl el al) (vector->values  blocks-from-left)]
+     [(br cr dr er ar) (vector->values blocks-from-right)]
      )
-    #(
-      (dword+ cl b)
-      (dword+ c dl er)
-      (dword+ d el ar)
-      (dword+ e al br)
-      (dword+ a bl cr)
-      )
+    `#(
+       ,(dword+ cl b)
+       ,(dword+ c dl er)
+       ,(dword+ d el ar)
+       ,(dword+ e al br)
+       ,(dword+ a bl cr)
+       )
     )
   )
 
@@ -284,7 +289,7 @@
     (arithmetic-shift (vector-ref final-blocks 1) (* 3 32))
     (arithmetic-shift (vector-ref final-blocks 2) (* 2 32))
     (arithmetic-shift (vector-ref final-blocks 3) 32)
-    (vector-ref final-blocks 3)
+    (vector-ref final-blocks 4)
     )
   )
 
@@ -300,9 +305,9 @@
                        (lambda (branch)
                          (let-values
                            ( [(a b c d e)
-                              (calc-branch msgbytes branch blockstates)]
+                              (calc-branch (subbytes msgbytes 0 64) branch blockstates)]
                             )
-                           #(a b c d e)
+                           `#(,a ,b ,c ,d ,e)
                            )
                          )
                        machine
@@ -310,7 +315,7 @@
                      ]
                    [blocks-from-left (car new-blocks)]
                    [blocks-from-right (cadr new-blocks)]
-                   [next-chunk (bitwise-bit-field msgbytes 32 (* 8 (bytes-length msgbytes)))]
+                   [next-chunk (subbytes msgbytes 64 (bytes-length msgbytes))]
                    )
               (loop
                 next-chunk
