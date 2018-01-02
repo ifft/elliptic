@@ -270,8 +270,8 @@
      [( a  b  c  d  e) (vector->values       blockstates)]
      ;[(al bl cl dl el) (vector->values  blocks-from-left)]
      ;[(ar br cr dr er) (vector->values blocks-from-right)]
-     [(bl cl dl el al) (vector->values  blocks-from-left)]
-     [(br cr dr er ar) (vector->values blocks-from-right)]
+     [(el al bl cl dl) (vector->values  blocks-from-left)]
+     [(er ar br cr dr) (vector->values blocks-from-right)]
      )
     `#(
        ,(dword+ cl b)
