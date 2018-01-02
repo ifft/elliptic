@@ -224,6 +224,9 @@ void compress(uint32_t *MDbuf, uint32_t *X)
    FFF(ccc, ddd, eee, aaa, bbb, X[ 9] , 11);
    FFF(bbb, ccc, ddd, eee, aaa, X[11] , 11);
 
+   printf("aa = 08%x bb = 08%x cc = 08%x dd = 08%x ee = 08%x\n", aa, bb, cc, dd, ee);
+   printf("aaa = 08%x bbb = 08%x ccc = 08%x ddd = 08%x eee = 08%x\n", aaa, bbb, ccc, ddd, eee);
+
    /* combine results */
    ddd += cc + MDbuf[1];               /* final result for MDbuf[0] */
    MDbuf[1] = MDbuf[2] + dd + eee;
