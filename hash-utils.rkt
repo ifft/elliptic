@@ -205,9 +205,9 @@
 
 ; TODO organize these to structs
 ; TODO calculate these at phase level 1
-(struct branch (functions magics wordselect rotselect) #:transparent)
-(define left-branch (branch functions-left magic-left wordselect-left rotselect-left))
-(define right-branch (branch functions-right magic-right wordselect-right rotselect-right))
+(struct branch (xxxside functions magics wordselect rotselect) #:transparent)
+(define left-branch (branch 'left functions-left magic-left wordselect-left rotselect-left))
+(define right-branch (branch 'right functions-right magic-right wordselect-right rotselect-right))
 (define machine `(,left-branch ,right-branch))
 
 (define dword+
@@ -218,7 +218,8 @@
 
 (define (perform-function fun magic a b c d e x s)
   (values
-    (dword+ (crot-dword-left (dword+ (fun b c d) x magic) s) e)
+    ;(dword+ (crot-dword-left (dword+ a (fun b c d) x magic) s) e)
+    (dword+ (crot-dword-left (dword+ a (fun b c d) x) s) e)
     b
     (crot-dword-left c 10)
     d
@@ -227,38 +228,34 @@
   )
 
 (define (rotateboxes a b c d e)
- (values e a b c d))
+  (values e a b c d))
 
-    (define (calc-branch msgbytes branch blocks-state)
-     (let-values ([(a0 b0 c0 d0 e0) (vector->values blocks-state)])
-      (for*/fold
-       (
-        [a a0]
-        [b b0]
-        [c c0]
-        [d d0]
-        [e e0]
-       )
-       (
-        [iter (in-range 5)]
-        [ix (in-range 16)]
-       )
-       (let* (
-              [dword-index (* dword-size-in-bytes (vector-ref (vector-ref (branch-wordselect branch) iter) ix))]
-              [msg-as-int (integer-bytes->integer msgbytes #f #f dword-index (+ dword-index dword-size-in-bytes))]
-              [rotate-index (vector-ref (vector-ref (branch-rotselect branch) iter) ix)]
-              [function (vector-ref (branch-functions branch) iter)]
-              [magic (vector-ref (branch-magics branch) iter)]
-             )
-        (call-with-values
-         (lambda ()
-          (perform-function
-           function magic a b c d e
-           msg-as-int
-           rotate-index)
-         )
-         rotateboxes
-        )))))
+(define (calc-branch msgbytes branch blocks-state)
+  (let-values ([(a0 b0 c0 d0 e0) (vector->values blocks-state)])
+              (for*/fold
+                ([a a0]
+                 [b b0]
+                 [c c0]
+                 [d d0]
+                 [e e0])
+                ([iter (in-range 5)]
+                 [ix (in-range 16)])
+                (let* ([dword-index (* dword-size-in-bytes (vector-ref (vector-ref (branch-wordselect branch) iter) ix))]
+                       [msg-as-int (integer-bytes->integer msgbytes #f #f dword-index (+ dword-index dword-size-in-bytes))]
+                       [rotate-index (vector-ref (vector-ref (branch-rotselect branch) iter) ix)]
+                       [function (vector-ref (branch-functions branch) iter)]
+                       [magic (vector-ref (branch-magics branch) iter)])
+                  (call-with-values
+                    (lambda ()
+                      (perform-function
+                        function magic a b c d e
+                        msg-as-int
+                        rotate-index))
+                    (lambda (a b c d e)
+                      ;(when (and (= iter 0) (= ix 0))
+                      (dumpboxes (format "side: ~s iter ~a ix ~a magic: ~a s: ~a ix2: ~a" (symbol->string (branch-xxxside branch)) iter ix magic rotate-index dword-index) a b c d e)
+                      (rotateboxes a b c d e)
+                     ))))))
 
 
 (define (merge-branch-results blockstates blocks-from-left blocks-from-right)
@@ -286,7 +283,20 @@
     )
   )
 
+(define (dumpboxes msg a b c d e)
+ (printf msg)
+ (newline)
+  (for-each
+    (lambda (x) (printf "~a~n" (dumpdword x))) 
+    ;(lambda (x) (displayln x))
+    (map
+      (lambda (x)
+        (integer->integer-bytes x 4 #f))
+      `(,a ,b ,c ,d ,e))))
+
 (define (dumpdword val)
+ ;(display 'lofasz)
+ ;(displayln (bytes? val))
  (foldr 
   string-append
   ""

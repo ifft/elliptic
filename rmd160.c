@@ -38,7 +38,7 @@ void dumpboxes(const char *message, dword a, dword b, dword c, dword d, dword e)
 {
     unsigned i,j;
     dword mdbuf[5] = {a,b,c,d,e};
-    printf(message);
+    printf("%s", message);
     for (i = 0; i < 5; ++i)
     {
         for (j = 0; j < 4; ++j)
@@ -60,22 +60,37 @@ void compress(dword *MDbuf, dword *X)
 
    /* round 1 */
    FF(aa, bb, cc, dd, ee, X[ 0], 11);
-   dumpboxes("FF 1\n", aa,bb,cc,dd,ee);
+   dumpboxes("FF 0\n", aa,bb,cc,dd,ee);
    FF(ee, aa, bb, cc, dd, X[ 1], 14);
+   dumpboxes("FF 1\n", aa,bb,cc,dd,ee);
    FF(dd, ee, aa, bb, cc, X[ 2], 15);
+   dumpboxes("FF 2\n", aa,bb,cc,dd,ee);
    FF(cc, dd, ee, aa, bb, X[ 3], 12);
+   dumpboxes("FF 3\n", aa,bb,cc,dd,ee);
    FF(bb, cc, dd, ee, aa, X[ 4],  5);
+   dumpboxes("FF 4\n", aa,bb,cc,dd,ee);
    FF(aa, bb, cc, dd, ee, X[ 5],  8);
+   dumpboxes("FF 5\n", aa,bb,cc,dd,ee);
    FF(ee, aa, bb, cc, dd, X[ 6],  7);
+   dumpboxes("FF 6\n", aa,bb,cc,dd,ee);
    FF(dd, ee, aa, bb, cc, X[ 7],  9);
+   dumpboxes("FF 7\n", aa,bb,cc,dd,ee);
    FF(cc, dd, ee, aa, bb, X[ 8], 11);
+   dumpboxes("FF 8\n", aa,bb,cc,dd,ee);
    FF(bb, cc, dd, ee, aa, X[ 9], 13);
+   dumpboxes("FF 9\n", aa,bb,cc,dd,ee);
    FF(aa, bb, cc, dd, ee, X[10], 14);
+   dumpboxes("FF 10\n", aa,bb,cc,dd,ee);
    FF(ee, aa, bb, cc, dd, X[11], 15);
+   dumpboxes("FF 11\n", aa,bb,cc,dd,ee);
    FF(dd, ee, aa, bb, cc, X[12],  6);
+   dumpboxes("FF 12\n", aa,bb,cc,dd,ee);
    FF(cc, dd, ee, aa, bb, X[13],  7);
+   dumpboxes("FF 13\n", aa,bb,cc,dd,ee);
    FF(bb, cc, dd, ee, aa, X[14],  9);
+   dumpboxes("FF 14\n", aa,bb,cc,dd,ee);
    FF(aa, bb, cc, dd, ee, X[15],  8);
+   dumpboxes("FF 15\n", aa,bb,cc,dd,ee);
                              
    /* round 2 */
    GG(ee, aa, bb, cc, dd, X[ 7],  7);
