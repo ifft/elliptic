@@ -3,6 +3,8 @@
  padmessage
  n-byte-int->number
  compress
+ ;XXX
+ dumpdword
 )
 
 (define blocklen 64)
@@ -272,6 +274,11 @@
      ;[(ar br cr dr er) (vector->values blocks-from-right)]
      [(bl cl dl el al) (vector->values  blocks-from-left)]
      [(br cr dr er ar) (vector->values blocks-from-right)]
+
+   ;ideal  JJ(bb, cc, dd, ee, aa, X[13],  6);
+   ;actual JJ(aa, bb, cc, dd, ee, X[ 0], 15);
+
+
      )
     `#(
        ,(dword+ cl b)
@@ -282,6 +289,20 @@
        )
     )
   )
+
+(define (dumpdword val)
+ (foldr 
+  string-append
+  ""
+  (map (lambda (byte)
+        (let ([str (format "~x " byte)])
+         (if (= (string-length str) 1) (string-append "0" str) str)
+        )
+       )
+   (bytes->list val)
+  )
+ )
+ )
 
 (define (assemble-result final-blocks)
   (bitwise-ior
