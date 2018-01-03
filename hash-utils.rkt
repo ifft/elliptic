@@ -229,40 +229,36 @@
 (define (rotateboxes a b c d e)
  (values e a b c d))
 
-(define (calc-branch msgbytes branch blocks-state)
-  (let-values ([(a0 b0 c0 d0 e0) (vector->values blocks-state)])
-              (for*/fold
-                (
-                 [a a0]
-                 [b b0]
-                 [c c0]
-                 [d d0]
-                 [e e0]
-                 )
-                (
-                 [iter (in-range 5)]
-                 [ix (in-range 16)]
-                 )
-                (let* (
-                      [dword-index (* dword-size-in-bytes (vector-ref (vector-ref (branch-wordselect branch) iter) ix))]
-                      [msg-as-int (integer-bytes->integer msgbytes #f #f dword-index (+ dword-index dword-size-in-bytes))]
-                      [rotate-index (vector-ref (vector-ref (branch-rotselect branch) iter) ix)]
-                      [function (vector-ref (branch-functions branch) iter)]
-                      [magic (vector-ref (branch-magics branch) iter)]
-                      )
-                  (call-with-values
-                  (lambda ()
-                    (perform-function
-                      function magic a b c d e
-                      msg-as-int
-                      rotate-index)
-                    )
-                    rotateboxes
-                    )
-                  )
-                )
-              )
-  )
+    (define (calc-branch msgbytes branch blocks-state)
+     (let-values ([(a0 b0 c0 d0 e0) (vector->values blocks-state)])
+      (for*/fold
+       (
+        [a a0]
+        [b b0]
+        [c c0]
+        [d d0]
+        [e e0]
+       )
+       (
+        [iter (in-range 5)]
+        [ix (in-range 16)]
+       )
+       (let* (
+              [dword-index (* dword-size-in-bytes (vector-ref (vector-ref (branch-wordselect branch) iter) ix))]
+              [msg-as-int (integer-bytes->integer msgbytes #f #f dword-index (+ dword-index dword-size-in-bytes))]
+              [rotate-index (vector-ref (vector-ref (branch-rotselect branch) iter) ix)]
+              [function (vector-ref (branch-functions branch) iter)]
+              [magic (vector-ref (branch-magics branch) iter)]
+             )
+        (call-with-values
+         (lambda ()
+          (perform-function
+           function magic a b c d e
+           msg-as-int
+           rotate-index)
+         )
+         rotateboxes
+        )))))
 
 
 (define (merge-branch-results blockstates blocks-from-left blocks-from-right)
