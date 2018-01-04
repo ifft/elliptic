@@ -7,7 +7,7 @@ int main()
     byte data[32] = {0,};
     dword mdbuf[5] = {0,};;
     unsigned i, j;
-    data[0] = 'a';
+    //data[0] = 'a';
 
     MDinit(mdbuf);
     MDfinish(mdbuf, data, 1, 0);

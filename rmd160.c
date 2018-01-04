@@ -59,8 +59,10 @@ void compress(dword *MDbuf, dword *X)
          ddd = MDbuf[3], eee = MDbuf[4];
 
    /* round 1 */
+   printf("after fun: %x\n",   F((bb), (cc), (dd)));
    FF(aa, bb, cc, dd, ee, X[ 0], 11);
    dumpboxes("FF 0\n", aa,bb,cc,dd,ee);
+   printf("x0: %02x\n", X[0]);
    FF(ee, aa, bb, cc, dd, X[ 1], 14);
    dumpboxes("FF 1\n", aa,bb,cc,dd,ee);
    FF(dd, ee, aa, bb, cc, X[ 2], 15);
