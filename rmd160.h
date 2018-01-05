@@ -55,7 +55,6 @@ typedef int the_correct_size_was_chosen [sizeof (dword) == 4? 1: -1];
 /* the ten basic operations FF() through III() */
 #define FF(a, b, c, d, e, x, s)        {\
       (a) += F((b), (c), (d)) + (x);\
-      printf ("a+=... %x x= %x\n", (a), (x)); \
       (a) = ROL((a), (s)) + (e);\
       (c) = ROL((c), 10);\
    }

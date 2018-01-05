@@ -216,11 +216,7 @@
   )
 
 (define (perform-function fun magic a b c d e x s)
-  (printf "perform-function~n")
-  (dumpboxes "boxes: " a b c d e)
-  (printf "x: 0x~x s: ~a~n" x s)
-  (printf "after fun: 0x~x~n" (fun b c d))
-  (printf "a+=... ~x~n" (dword+ a (fun b c d) x magic))
+  ;(dumpboxes "boxes: " a b c d e)
   (values
     (dword+ (crot-dword-left (dword+ a (fun b c d) x magic) s) e)
     b
@@ -248,10 +244,6 @@
                        [rotate-index (vector-ref (vector-ref (branch-rotselect branch) iter) ix)]
                        [function (vector-ref (branch-functions branch) iter)]
                        [magic (vector-ref (branch-magics branch) iter)])
-                  (printf "XXX msgbytes ~a~n" msgbytes)
-                  (printf "dword-index: ~a msg-as-int: ~a rotate-index: ~a magic: ~a~n"
-                   dword-index msg-as-int rotate-index magic)
-                  (dumpboxes "boxes before: " a b c d e)
                   (call-with-values
                     (lambda ()
                       (perform-function
@@ -260,7 +252,7 @@
                         rotate-index))
                     (lambda (a b c d e)
                       ;(when (and (= iter 0) (= ix 0))
-                      (dumpboxes (format "after function~nside: ~s iter ~a ix ~a magic: ~a s: ~a ix2: ~a msg: ~a" (symbol->string (branch-xxxside branch)) iter ix magic rotate-index dword-index (format "~x" msg-as-int)) a b c d e)
+                      (dumpboxes "before rotate" a b c d e)
                       (rotateboxes a b c d e)
                      ))))))
 
