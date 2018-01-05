@@ -216,11 +216,12 @@
   )
 
 (define (perform-function fun magic a b c d e x s)
-  (printf "after fun: ~x~n" (fun b c d))
+  (printf "perform-function~n")
+  (dumpboxes "boxes: " a b c d e)
+  (printf "x: 0x~x s: ~a~n" x s)
+  (printf "after fun: 0x~x~n" (fun b c d))
   (printf "a+=... ~x~n" (dword+ a (fun b c d) x magic))
   (values
-      ;(a) += F((b), (c), (d)) + (x);\
-    ;(dword+ (crot-dword-left (dword+ a (fun b c d) x magic) s) e)
     (dword+ (crot-dword-left (dword+ a (fun b c d) x magic) s) e)
     b
     (crot-dword-left c 10)
@@ -248,8 +249,9 @@
                        [function (vector-ref (branch-functions branch) iter)]
                        [magic (vector-ref (branch-magics branch) iter)])
                   (printf "XXX msgbytes ~a~n" msgbytes)
-                  (printf "dword-index: ~a msg-as-int: ~a rotate-index ~a magic; ~a~n"
-                  dword-index msg-as-int rotate-index magic)
+                  (printf "dword-index: ~a msg-as-int: ~a rotate-index: ~a magic: ~a~n"
+                   dword-index msg-as-int rotate-index magic)
+                  (dumpboxes "boxes before: " a b c d e)
                   (call-with-values
                     (lambda ()
                       (perform-function
@@ -258,7 +260,7 @@
                         rotate-index))
                     (lambda (a b c d e)
                       ;(when (and (= iter 0) (= ix 0))
-                      (dumpboxes (format "side: ~s iter ~a ix ~a magic: ~a s: ~a ix2: ~a msg: ~a" (symbol->string (branch-xxxside branch)) iter ix magic rotate-index dword-index (format "~x" msg-as-int)) a b c d e)
+                      (dumpboxes (format "after function~nside: ~s iter ~a ix ~a magic: ~a s: ~a ix2: ~a msg: ~a" (symbol->string (branch-xxxside branch)) iter ix magic rotate-index dword-index (format "~x" msg-as-int)) a b c d e)
                       (rotateboxes a b c d e)
                      ))))))
 
@@ -300,8 +302,6 @@
       `(,a ,b ,c ,d ,e))))
 
 (define (dumpdword val)
- ;(display 'lofasz)
- ;(displayln (bytes? val))
  (foldr 
   string-append
   ""

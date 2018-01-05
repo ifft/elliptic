@@ -10,9 +10,8 @@ int main()
     //data[0] = 'a';
 
     MDinit(mdbuf);
-    MDfinish(mdbuf, data, 1, 0);
+    MDfinish(mdbuf, data, 0, 0);
 
-    /*
     for (i = 0; i < 5; ++i)
     {
         for (j = 0; j < 4; ++j)
@@ -21,7 +20,6 @@ int main()
         }
         printf("\n");
     }
-    */
 
     return 0;
 }
