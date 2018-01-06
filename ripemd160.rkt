@@ -2,6 +2,7 @@
 (require "utility.rkt")
 (provide 
  padmessage
+ padmessage-ng
  ripemd160
 )
 
@@ -34,6 +35,31 @@
          [bit-len (* 8 (bytes-length msgbytes))]
          [msgbytes (addstopbit msgbytes)])
     (insert-msglen (expand-message msgbytes) bit-len)))
+
+(define (padmessage-ng inport)
+  (define (loop msgbytes bit-len)
+    (let* ([last? (eof-object? (peek-byte inport 1))]
+           [msgout
+             (if
+               last?
+               (insert-msglen (expand-message (addstopbit msgbytes)) bit-len)
+               msgbytes)]
+           [bstr (make-bytes 64 0)] )
+
+      (write-bytes msgbytes)
+
+      (cond
+        ((last?) (void)) ;exit
+        (else
+          (read-bytes! bstr inport 0 64)
+          (loop
+            bstr
+            (+ bit-len (* 8 (bytes-length bstr))))))))
+
+  (let* ([bstr (make-bytes 64 0)]
+         [bitlen (read-bytes! bstr inport 0 64)])
+    (loop bstr bitlen)))
+
 
 (define (n-byte-int->number n stepsize msgbytes)
   (let-values ([(ret x)
