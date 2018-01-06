@@ -1,8 +1,11 @@
 #lang racket
+(require "utility.rkt")
 (provide 
  padmessage
  n-byte-int->number
  compress
+ md160->number
+ md160->string
  ;XXX
  dumpdword
 )
@@ -37,23 +40,23 @@
          [msgbytes (addstopbit msgbytes)])
     (insert-msglen (expand-message msgbytes) bit-len)))
 
-(define (n-byte-int->number n msgbytes)
+(define (n-byte-int->number n stepsize msgbytes)
   (let-values ([(ret x)
                 (let (
-                      [by-8-bytes (* 8 8)]
-                      [numsteps   (/ n 8)]
+                      [by-stepsize-bytes (* 8 stepsize)]
+                      [numsteps   (/ n stepsize)]
                       )
-                 (unless (integer? numsteps) (error 'n-byte-int->number "n should be dividable by 8"))
+                 (unless (integer? numsteps) (error 'n-byte-int->number "n should be dividable by stepsize"))
                   (for/fold
                     (
                      [number 0]
                      [msg msgbytes]
                      )
                     ([i (in-range numsteps)])
-                    (values (+ (arithmetic-shift number by-8-bytes)
-                               (integer-bytes->integer msg #f #t 0 8)
+                    (values (+ (arithmetic-shift number by-stepsize-bytes)
+                               (integer-bytes->integer msg #f #t 0 stepsize)
                                )
-                            (subbytes msg 8)
+                            (subbytes msg stepsize)
                             )
                     )
                   )
@@ -235,7 +238,7 @@
                         rotate-index))
                     (lambda (a b c d e)
                       ;(when (and (= iter 0) (= ix 0))
-                      (dumpboxes "before rotate" a b c d e)
+                      ;(dumpboxes "before rotate" a b c d e)
                       (rotateboxes a b c d e)))))))
 
 
@@ -245,9 +248,9 @@
      [( a  b  c  d  e) (vector->values       blockstates)]
      [(al bl cl dl el) (vector->values  blocks-from-left)]
      [(ar br cr dr er) (vector->values blocks-from-right)])
-    (dumpboxes "mb orig: " blockstates)
-    (dumpboxes "mb left " blocks-from-left)
-    (dumpboxes "mb right " blocks-from-right)
+    ;(dumpboxes "mb orig: " blockstates)
+    ;(dumpboxes "mb left " blocks-from-left)
+    ;(dumpboxes "mb right " blocks-from-right)
     (let  ([A (dword+ dr cl b)]
            [B (dword+ c dl er)]
            [C (dword+ d el ar)]
@@ -278,19 +281,27 @@
   ""
   (map (lambda (byte)
         (let ([str (format "~x " byte)])
-         (if (= (string-length str) 1) (string-append "0" str) str)))
+         (if (= (string-length str) 2) (string-append "0" str) str))) ; XXX fix
    (bytes->list val))))
 
 (define (assemble-result final-blocks)
-  (call-with-values
-    (lambda () (vector->values final-blocks))
-    (lambda (a b c d e) (printf "~x ~x ~x ~x ~x" a b c d e)))
-  (bitwise-ior
-    (arithmetic-shift (vector-ref final-blocks 0) (* 0 32))
-    (arithmetic-shift (vector-ref final-blocks 1) (* 1 32))
-    (arithmetic-shift (vector-ref final-blocks 2) (* 2 32))
-    (arithmetic-shift (vector-ref final-blocks 3) (* 3 32))
-    (arithmetic-shift (vector-ref final-blocks 4) (* 4 32))))
+  (define (dword->bytes dword) (integer->integer-bytes dword 4 #f #t))
+
+  (apply
+    bytes-append
+    (map
+      dword->bytes
+      (vector->list final-blocks))))
+
+  ;(call-with-values
+  ;  (lambda () (vector->values final-blocks))
+  ;  (lambda (a b c d e) (printf "~x ~x ~x ~x ~x" a b c d e)))
+  ;(bitwise-ior
+    ;(arithmetic-shift (vector-ref final-blocks 0) (* 4 32))
+    ;(arithmetic-shift (vector-ref final-blocks 1) (* 3 32))
+    ;(arithmetic-shift (vector-ref final-blocks 2) (* 2 32))
+    ;(arithmetic-shift (vector-ref final-blocks 3) (* 1 32))
+    ;(arithmetic-shift (vector-ref final-blocks 4) (* 0 32))))
 
 (define (compress msgbytes)
   (let loop (
@@ -316,3 +327,24 @@
                   blocks-from-left
                   blocks-from-right)))))))
 
+(define (dword-little-endian->big-endian bstr)
+ (define (convertdword dword)
+   (list->bytes (reverse (bytes->list dword))))
+
+ (let loop ([bstr bstr]
+            [accum #""])
+  (cond
+   ((< (bytes-length bstr) 4) accum)
+   (else (loop (subbytes bstr 4 (bytes-length bstr)) (bytes-append accum (convertdword (subbytes bstr 0 4))))))))
+
+(define (md160->string hash)
+ (foldr
+  string-append
+  ""
+  (let ([converted (dword-little-endian->big-endian hash)])
+    (map
+      padhex
+      (bytes->list converted)))))
+
+(define (md160->number hash)
+ (n-byte-int->number 20 4 (dword-little-endian->big-endian hash)))

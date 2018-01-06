@@ -154,8 +154,5 @@
     (if
       (not (zero? (modulo (string-length raw) 2)))
       (string-append "0" raw)
-      raw
-      )
-    )
-  )
+      raw)))
 

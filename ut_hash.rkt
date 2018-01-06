@@ -163,22 +163,22 @@
     )
   )
 
-;;;;; n-byte-int->number ;;;;;
-(check-equal?
-  (n-byte-int->number 64 (bytes-append (bytes 1) (make-bytes 63 0)))
-  (arithmetic-shift #x01 (* 63 8))
-  )
+;;;;; n-byte-int->number whith steps 4, 8 ;;;;;
+(for-each
+  (lambda (stepsize)
+    (check-equal?
+      (n-byte-int->number 64 stepsize (bytes-append (bytes 1) (make-bytes 63 0)))
+      (arithmetic-shift #x01 (* 63 8)))
 
-(check-equal?
-  (n-byte-int->number 64 (bytes-append (bytes 1 2) (make-bytes 61 0) (bytes 1)))
-  (+
-    (arithmetic-shift 1 (* 63 8))
-    (arithmetic-shift 2 (* 62 8))
-    1
-    )
-  )
+    (check-equal?
+      (n-byte-int->number 64 stepsize (bytes-append (bytes 1 2) (make-bytes 61 0) (bytes 1)))
+      (+
+        (arithmetic-shift 1 (* 63 8))
+        (arithmetic-shift 2 (* 62 8))
+        1)))
+  '(4 8))
 
-(check-exn exn:fail? (lambda () (n-byte-int->number 5 (make-bytes 5 0))))
+(check-exn exn:fail? (lambda () (n-byte-int->number 5 8 (make-bytes 5 0))))
 
 ;;;;; crot-dword-left ;;;;;
 (check-exn exn:fail? (lambda () (crot-dword-left (expt 2 32) 1)))
@@ -190,3 +190,15 @@
 ;;;;; dword+ ;;;;;
 (check-equal? (dword+ (sub1 (expt 2 32)) 1) 0)
 (check-equal? (dword+ (sub1 (expt 2 32)) 2) 1)
+
+;;;;; ripemd160 ;;;;;
+
+(check-equal? (md160->number (compress (padmessage #""))) #x9c1185a5c5e9fc54612808977ee8f548b2258d31)
+
+
+(for-each
+ (lambda (testcase)
+  (let ([message (vector-ref testcase 0)]
+        [hash    (vector-ref testcase 1)])
+   (check-equal? (md160->number (compress (padmessage (string->bytes/utf-8 message)))) hash)))
+ ripemd160-test-vectors)
