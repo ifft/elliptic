@@ -15,39 +15,27 @@
 (define (expand-message msgbytes)
   (let (
         [len (+ (bytes-length msgbytes) extradatalen)]
-        [%   (lambda (x) (modulo x blocklen))]
-
-        )
-    (bytes-append msgbytes (make-bytes extradatalen 0) (make-bytes (% (- blocklen (% len))) 0))
-    )
-  )
-
+        [%   (lambda (x) (modulo x blocklen))])
+    (bytes-append msgbytes (make-bytes extradatalen 0) (make-bytes (% (- blocklen (% len))) 0))))
 
 ; adds the stop-bit to the end of the message
 (define (addstopbit msgbytes)
- (bytes-append msgbytes (bytes #x80))
-  )
+ (bytes-append msgbytes (bytes #x80)))
 
 ; insert message bit-length to the last extradatalen bytes.
 ; last extradatalen bytes will be unconditionally overwritten
 (define (insert-msglen msgbytes bit-len)
   (when (< (bytes-length msgbytes) extradatalen) (error 'insert-msglen "byte stream is too short"))
   (let ([bit-len (integer->integer-bytes bit-len extradatalen #f)])
-    (bytes-append (subbytes msgbytes 0 (- (bytes-length msgbytes) 8)) bit-len
-                  )
-    )
-  )
+    (bytes-append (subbytes msgbytes 0 (- (bytes-length msgbytes) 8)) bit-len)))
 
 ; pad message
 ; TODO implement it with ports
 (define (padmessage msgbytes)
   (let* (
          [bit-len (* 8 (bytes-length msgbytes))]
-         [msgbytes (addstopbit msgbytes)]
-         )
-    (insert-msglen (expand-message msgbytes) bit-len)
-    )
-  )
+         [msgbytes (addstopbit msgbytes)])
+    (insert-msglen (expand-message msgbytes) bit-len)))
 
 (define (n-byte-int->number n msgbytes)
   (let-values ([(ret x)
@@ -211,20 +199,15 @@
 
 (define dword+
   (lambda args
-    (bitwise-bit-field (apply + args) 0 32)
-    )
-  )
+    (bitwise-bit-field (apply + args) 0 32)))
 
 (define (perform-function fun magic a b c d e x s)
-  ;(dumpboxes "boxes: " a b c d e)
   (values
     (dword+ (crot-dword-left (dword+ a (fun b c d) x magic) s) e)
     b
     (crot-dword-left c 10)
     d
-    e
-    )
-  )
+    e))
 
 (define (rotateboxes a b c d e)
   (values e a b c d))
@@ -253,45 +236,41 @@
                     (lambda (a b c d e)
                       ;(when (and (= iter 0) (= ix 0))
                       (dumpboxes "before rotate" a b c d e)
-                      (rotateboxes a b c d e)
-                     ))))))
+                      (rotateboxes a b c d e)))))))
 
 
 (define (merge-branch-results blockstates blocks-from-left blocks-from-right)
   (let-values
     (
-    ;   b  c  d  e  a
      [( a  b  c  d  e) (vector->values       blockstates)]
-     ;[(al bl cl dl el) (vector->values  blocks-from-left)]
-     ;[(ar br cr dr er) (vector->values blocks-from-right)]
-     [(bl cl dl el al) (vector->values  blocks-from-left)]
-     [(br cr dr er ar) (vector->values blocks-from-right)]
+     [(al bl cl dl el) (vector->values  blocks-from-left)]
+     [(ar br cr dr er) (vector->values blocks-from-right)])
+    (dumpboxes "mb orig: " blockstates)
+    (dumpboxes "mb left " blocks-from-left)
+    (dumpboxes "mb right " blocks-from-right)
+    (let  ([A (dword+ dr cl b)]
+           [B (dword+ c dl er)]
+           [C (dword+ d el ar)]
+           [D (dword+ e al br)]
+           [E (dword+ a bl cr)]
+          )
+    `#(,A ,B ,C ,D ,E))))
 
-   ;ideal  JJ(bb, cc, dd, ee, aa, X[13],  6);
-   ;actual JJ(aa, bb, cc, dd, ee, X[ 0], 15);
-
-
-     )
-    `#(
-       ,(dword+ cl b)
-       ,(dword+ c dl er)
-       ,(dword+ d el ar)
-       ,(dword+ e al br)
-       ,(dword+ a bl cr)
-       )
-    )
-  )
-
-(define (dumpboxes msg a b c d e)
- (printf msg)
- (newline)
-  (for-each
-    (lambda (x) (printf "~a~n" (dumpdword x))) 
-    ;(lambda (x) (displayln x))
-    (map
-      (lambda (x)
-        (integer->integer-bytes x 4 #f))
-      `(,a ,b ,c ,d ,e))))
+(define dumpboxes
+ (case-lambda
+  [(msg vec)
+   (call-with-values
+     (lambda () (vector->values vec))
+     (lambda (a b c d e) (dumpboxes msg a b c d e)))]
+  [(msg a b c d e)
+       (printf msg)
+       (newline)
+       (for-each
+         (lambda (x) (printf "~a~n" (dumpdword x))) 
+         (map
+           (lambda (x)
+             (integer->integer-bytes x 4 #f))
+           `(,a ,b ,c ,d ,e)))]))
 
 (define (dumpdword val)
  (foldr 
@@ -299,59 +278,41 @@
   ""
   (map (lambda (byte)
         (let ([str (format "~x " byte)])
-         (if (= (string-length str) 1) (string-append "0" str) str)
-        )
-       )
-   (bytes->list val)
-  )
- )
- )
+         (if (= (string-length str) 1) (string-append "0" str) str)))
+   (bytes->list val))))
 
 (define (assemble-result final-blocks)
+  (call-with-values
+    (lambda () (vector->values final-blocks))
+    (lambda (a b c d e) (printf "~x ~x ~x ~x ~x" a b c d e)))
   (bitwise-ior
-    (arithmetic-shift (vector-ref final-blocks 0) (* 4 32))
-    (arithmetic-shift (vector-ref final-blocks 1) (* 3 32))
+    (arithmetic-shift (vector-ref final-blocks 0) (* 0 32))
+    (arithmetic-shift (vector-ref final-blocks 1) (* 1 32))
     (arithmetic-shift (vector-ref final-blocks 2) (* 2 32))
-    (arithmetic-shift (vector-ref final-blocks 3) 32)
-    (vector-ref final-blocks 4)
-    )
-  )
+    (arithmetic-shift (vector-ref final-blocks 3) (* 3 32))
+    (arithmetic-shift (vector-ref final-blocks 4) (* 4 32))))
 
 (define (compress msgbytes)
   (let loop (
              [msgbytes msgbytes]
-             [blockstates blockinit]
-             )
+             [blockstates blockinit])
     (cond
       ((< (bytes-length msgbytes) blocklen) (assemble-result blockstates))
       (else (let* ([new-blocks
                      (map
                        (lambda (branch)
                          (let-values
-                           ( [(a b c d e)
-                              (calc-branch (subbytes msgbytes 0 64) branch blockstates)]
-                            )
-                           `#(,a ,b ,c ,d ,e)
-                           )
-                         )
-                       machine
-                       )
-                     ]
+                           ([(a b c d e)
+                             (calc-branch (subbytes msgbytes 0 64) branch blockstates)])
+                           `#(,a ,b ,c ,d ,e)))
+                       machine)]
                    [blocks-from-left (car new-blocks)]
                    [blocks-from-right (cadr new-blocks)]
-                   [next-chunk (subbytes msgbytes 64 (bytes-length msgbytes))]
-                   )
+                   [next-chunk (subbytes msgbytes 64 (bytes-length msgbytes))])
               (loop
                 next-chunk
                 (merge-branch-results
                   blockstates
                   blocks-from-left
-                  blocks-from-right
-                  )
-                )
-              )
-            )
-      )
-    )
-  )
+                  blocks-from-right)))))))
 

@@ -407,6 +407,9 @@ void compress(dword *MDbuf, dword *X)
    FFF(bbb, ccc, ddd, eee, aaa, X[11] , 11);
    dumpboxes("FFF\n", bbb, ccc, ddd, eee, aaa);
 
+   dumpboxes("orig\n", MDbuf[0], MDbuf[1], MDbuf[2], MDbuf[3], MDbuf[4]);
+   dumpboxes("left\n", aa, bb, cc, dd, ee);
+   dumpboxes("right\n", aaa, bbb, ccc, ddd, eee);
    /* combine results */
    ddd += cc + MDbuf[1];               /* final result for MDbuf[0] */
    MDbuf[1] = MDbuf[2] + dd + eee;
