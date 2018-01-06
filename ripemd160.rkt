@@ -188,9 +188,9 @@
 			   )
   )
 
-(struct branch (xxxside functions magics wordselect rotselect) #:transparent)
-(define left-branch (branch 'left functions-left magic-left wordselect-left rotselect-left))
-(define right-branch (branch 'right functions-right magic-right wordselect-right rotselect-right))
+(struct branch (functions magics wordselect rotselect) #:transparent)
+(define left-branch (branch functions-left magic-left wordselect-left rotselect-left))
+(define right-branch (branch functions-right magic-right wordselect-right rotselect-right))
 (define machine `(,left-branch ,right-branch))
 
 (define dword+
