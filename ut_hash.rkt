@@ -1,19 +1,27 @@
 #lang racket
 (require rackunit "hash-utils.rkt")
 (require rackunit "utility.rkt")
-(require/expose "hash-utils.rkt"(expand-message insert-msglen addstopbit))
+(require/expose "hash-utils.rkt"
+                (expand-message
+                  insert-msglen
+                  addstopbit
+                  crot-dword-left
+                  dword+
+                  n-byte-int->number
+                  )
+                )
 
 ;;;;; RIPEMD 160 test vectors ;;;;;
 (define ripemd160-test-vectors
   '(
-    #("" "9c1185a5c5e9fc54612808977ee8f548b2258d31")
-    #("a" "0bdc9d2d256b3ee9daae347be6f4dc835a467ffe")
-    #("abc" "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc")
-    #("message digest"  "5d0689ef49d2fae572b881b123a85ffa21595f36")
-    #("abcdefghijklmnopqrstuvwxyz" "f71c27109c692c1b56bbdceb5b9d2865b3708dbc")
-    #("abcdbcdefghijklmnopq" "12a053384a9c0c88e405a06c27dcf49ada62eb2b")
-    #("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" "b0e20b6e3116640286ed3a87a5713079b21f5189")
-    #("12345678901234567890123456789012345678901234567890123456789012345678901234567890" "9b752e45573d4b39f4dbd3323cab82bf63326bfb")
+    #("" #x9c1185a5c5e9fc54612808977ee8f548b2258d31    "9c1185a5c5e9fc54612808977ee8f548b2258d31")
+    #("a" #x0bdc9d2d256b3ee9daae347be6f4dc835a467ffe   "0bdc9d2d256b3ee9daae347be6f4dc835a467ffe")
+    #("abc" #x8eb208f7e05d987a9b044a8e98c6b087f15a0bfc "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc")
+    #("message digest"  #x5d0689ef49d2fae572b881b123a85ffa21595f36 "5d0689ef49d2fae572b881b123a85ffa21595f36")
+    #("abcdefghijklmnopqrstuvwxyz" #xf71c27109c692c1b56bbdceb5b9d2865b3708dbc "f71c27109c692c1b56bbdceb5b9d2865b3708dbc")
+    #("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" #x12a053384a9c0c88e405a06c27dcf49ada62eb2b "12a053384a9c0c88e405a06c27dcf49ada62eb2b")
+    #("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" #xb0e20b6e3116640286ed3a87a5713079b21f5189 "b0e20b6e3116640286ed3a87a5713079b21f5189")
+    #("12345678901234567890123456789012345678901234567890123456789012345678901234567890" #x9b752e45573d4b39f4dbd3323cab82bf63326bfb "9b752e45573d4b39f4dbd3323cab82bf63326bfb")
     )
   )
 ;TODO
@@ -156,21 +164,40 @@
     )
   )
 
-;;;;; n-byte-int->number ;;;;;
-(check-equal?
-  (n-byte-int->number 64 (bytes-append (bytes 1) (make-bytes 63 0)))
-  (arithmetic-shift #x01 (* 63 8))
-  )
+;;;;; n-byte-int->number whith steps 4, 8 ;;;;;
+(for-each
+  (lambda (stepsize)
+    (check-equal?
+      (n-byte-int->number 64 stepsize (bytes-append (bytes 1) (make-bytes 63 0)))
+      (arithmetic-shift #x01 (* 63 8)))
 
-(check-equal?
-  (n-byte-int->number 64 (bytes-append (bytes 1 2) (make-bytes 61 0) (bytes 1)))
-  (+
-    (arithmetic-shift 1 (* 63 8))
-    (arithmetic-shift 2 (* 62 8))
-    1
-    )
-  )
+    (check-equal?
+      (n-byte-int->number 64 stepsize (bytes-append (bytes 1 2) (make-bytes 61 0) (bytes 1)))
+      (+
+        (arithmetic-shift 1 (* 63 8))
+        (arithmetic-shift 2 (* 62 8))
+        1)))
+  '(4 8))
 
-(check-exn exn:fail? (lambda () (n-byte-int->number 5 (make-bytes 5 0))))
+(check-exn exn:fail? (lambda () (n-byte-int->number 5 8 (make-bytes 5 0))))
 
+;;;;; crot-dword-left ;;;;;
+(check-exn exn:fail? (lambda () (crot-dword-left (expt 2 32) 1)))
+(check-equal? (crot-dword-left (expt 2 31) 1) 1)
+(check-equal? (crot-dword-left (expt 2 31) 5) (expt 2 4))
+(check-equal? (crot-dword-left #x12345678 4) #x23456781)
+(check-equal? (crot-dword-left #b00010010001101000101011001111000 10) #b11010001010110011110000001001000)
 
+;;;;; dword+ ;;;;;
+(check-equal? (dword+ (sub1 (expt 2 32)) 1) 0)
+(check-equal? (dword+ (sub1 (expt 2 32)) 2) 1)
+
+;;;;; test ripemd160 both number and string versions
+(for-each
+  (lambda (testcase)
+    (let ([message (vector-ref testcase 0)]
+          [hash    (vector-ref testcase 1)]
+          [hashstr (vector-ref testcase 2)])
+      (check-equal? (ripemd160 (string->bytes/utf-8 message)) hash)
+      (check-equal? (ripemd160 (string->bytes/utf-8 message) #t) hashstr)))
+  ripemd160-test-vectors)
