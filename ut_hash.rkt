@@ -1,7 +1,7 @@
 #lang racket
-(require rackunit "hash-utils.rkt")
+(require rackunit "ripemd160.rkt")
 (require rackunit "utility.rkt")
-(require/expose "hash-utils.rkt"
+(require/expose "ripemd160.rkt"
                 (expand-message
                   insert-msglen
                   addstopbit
