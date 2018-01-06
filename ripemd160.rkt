@@ -2,12 +2,7 @@
 (require "utility.rkt")
 (provide 
  padmessage
- n-byte-int->number
- compress
- md160->number
- md160->string
- ;XXX
- dumpdword
+ ripemd160
 )
 
 (define blocklen 64)
@@ -193,11 +188,9 @@
 			   )
   )
 
-; TODO organize these to structs
-; TODO calculate these at phase level 1
-(struct branch (xxxside functions magics wordselect rotselect) #:transparent)
-(define left-branch (branch 'left functions-left magic-left wordselect-left rotselect-left))
-(define right-branch (branch 'right functions-right magic-right wordselect-right rotselect-right))
+(struct branch (functions magics wordselect rotselect) #:transparent)
+(define left-branch (branch functions-left magic-left wordselect-left rotselect-left))
+(define right-branch (branch functions-right magic-right wordselect-right rotselect-right))
 (define machine `(,left-branch ,right-branch))
 
 (define dword+
@@ -237,8 +230,6 @@
                         msg-as-int
                         rotate-index))
                     (lambda (a b c d e)
-                      ;(when (and (= iter 0) (= ix 0))
-                      ;(dumpboxes "before rotate" a b c d e)
                       (rotateboxes a b c d e)))))))
 
 
@@ -248,9 +239,6 @@
      [( a  b  c  d  e) (vector->values       blockstates)]
      [(al bl cl dl el) (vector->values  blocks-from-left)]
      [(ar br cr dr er) (vector->values blocks-from-right)])
-    ;(dumpboxes "mb orig: " blockstates)
-    ;(dumpboxes "mb left " blocks-from-left)
-    ;(dumpboxes "mb right " blocks-from-right)
     (let  ([A (dword+ dr cl b)]
            [B (dword+ c dl er)]
            [C (dword+ d el ar)]
@@ -258,31 +246,6 @@
            [E (dword+ a bl cr)]
           )
     `#(,A ,B ,C ,D ,E))))
-
-(define dumpboxes
- (case-lambda
-  [(msg vec)
-   (call-with-values
-     (lambda () (vector->values vec))
-     (lambda (a b c d e) (dumpboxes msg a b c d e)))]
-  [(msg a b c d e)
-       (printf msg)
-       (newline)
-       (for-each
-         (lambda (x) (printf "~a~n" (dumpdword x))) 
-         (map
-           (lambda (x)
-             (integer->integer-bytes x 4 #f))
-           `(,a ,b ,c ,d ,e)))]))
-
-(define (dumpdword val)
- (foldr 
-  string-append
-  ""
-  (map (lambda (byte)
-        (let ([str (format "~x " byte)])
-         (if (= (string-length str) 2) (string-append "0" str) str))) ; XXX fix
-   (bytes->list val))))
 
 (define (assemble-result final-blocks)
   (define (dword->bytes dword) (integer->integer-bytes dword 4 #f #t))
@@ -292,16 +255,6 @@
     (map
       dword->bytes
       (vector->list final-blocks))))
-
-  ;(call-with-values
-  ;  (lambda () (vector->values final-blocks))
-  ;  (lambda (a b c d e) (printf "~x ~x ~x ~x ~x" a b c d e)))
-  ;(bitwise-ior
-    ;(arithmetic-shift (vector-ref final-blocks 0) (* 4 32))
-    ;(arithmetic-shift (vector-ref final-blocks 1) (* 3 32))
-    ;(arithmetic-shift (vector-ref final-blocks 2) (* 2 32))
-    ;(arithmetic-shift (vector-ref final-blocks 3) (* 1 32))
-    ;(arithmetic-shift (vector-ref final-blocks 4) (* 0 32))))
 
 (define (compress msgbytes)
   (let loop (
@@ -348,3 +301,9 @@
 
 (define (md160->number hash)
  (n-byte-int->number 20 4 (dword-little-endian->big-endian hash)))
+
+(define (ripemd160 message (string? #f))
+  (if string?
+    (md160->string (compress (padmessage message)))
+    (md160->number (compress (padmessage message)))))
+
