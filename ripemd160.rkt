@@ -39,36 +39,22 @@
 (define (padmessage-ng
           (inport (current-input-port))
           (outport (current-output-port)))
-  ; TODO define the mutable bstr HERE!!!!
-  (define (loop msgbytes bit-len)
-    (let* ([last? (eof-object? (peek-byte inport 1))]
-           [msgout
-             (if
-               last?
-               (insert-msglen (expand-message (addstopbit msgbytes)) bit-len)
-               msgbytes)]
-           [bstr (make-bytes 64 0)] )
-      ;(printf "bytes-length: ~a~n" (bytes-length msgbytes))
-      ;(printf "~a~n" msgbytes)
-      ;(printf "last? ~a~n" last?)
-      ;(printf "w/ stopbit ~a~n" (addstopbit msgbytes))
-      ;(printf "w/ expand ~a~n" (expand-message (addstopbit msgbytes)))
-      ;(printf "w/ len ~a~n" (insert-msglen (expand-message (addstopbit msgbytes)) bit-len))
-      (write-bytes msgout)
+  (letrec ([buffer (make-bytes 64 0)]
+           [bytes-read (read-bytes! buffer inport 0 64)]
+           [loop
+             (lambda (bytes-read_)
+               (let ([last? (eof-object? (read-bytes 1 inport))])
+                 (cond
+                   (last?
+                     (let ([sub-buffer (subbytes buffer 0 bytes-read_)])
+                       (write-bytes (insert-msglen (expand-message (addstopbit sub-buffer)) (* 8 bytes-read)))))
+                   (else 
+                     (write-bytes buffer)
+                     (let ([next-bytes-read (read-bytes! buffer inport 0 64)])
+                       (loop (+ next-bytes-read bytes-read_)))))))])
+    (loop bytes-read)))
+    
 
-      (cond
-        (last? (void)) ;exit
-        (else
-          (read-bytes! bstr inport 0 64)
-          (loop
-            bstr
-            (+ bit-len (* 8 (bytes-length bstr))))))))
-
-  (let* ([bstr (make-bytes 64 0)]
-         [chunk (read-bytes! bstr inport 0 64)]
-         [bitlen (if (eof-object? chunk) 0 chunk)])
-    ;(printf "initial bitlen: ~a~n" bitlen)
-    (loop bstr bitlen)))
 
 
 (define (n-byte-int->number n stepsize msgbytes)
