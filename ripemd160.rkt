@@ -54,9 +54,6 @@
                        (loop (+ next-bytes-read bytes-read_)))))))])
     (loop bytes-read)))
     
-
-
-
 (define (n-byte-int->number n stepsize msgbytes)
   (let-values ([(ret x)
                 (let (

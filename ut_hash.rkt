@@ -91,7 +91,7 @@
       [len (bit-length message)]
       )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (make-bytes 48 0) (integer->integer-bytes len 8 #f #f))
     )
   )
@@ -102,7 +102,7 @@
       [len (bit-length message)]
       )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (make-bytes (- 64 1 8) 0) (integer->integer-bytes len 8 #f #f))
     )
   )
@@ -113,11 +113,12 @@
       [len (bit-length message)]
       )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (make-bytes (- 64 16) 0) (integer->integer-bytes len 8 #f #f))
     )
   )
 
+#|
 ; pad to 128, stopbit fits, len does not fit
 (let* (
       [message (bytes-append #"message" (make-bytes (- 64 7 1) 42))]
@@ -163,7 +164,7 @@
     (bytes-append message (bytes #x80) (make-bytes 7 0) (make-bytes 56 0) (integer->integer-bytes len 8 #f #f))
     )
   )
-
+|#
 ;;;;; n-byte-int->number whith steps 4, 8 ;;;;;
 (for-each
   (lambda (stepsize)
