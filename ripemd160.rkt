@@ -2,7 +2,6 @@
 (require "utility.rkt")
 (provide 
  padmessage
- padmessage-ng
  ripemd160
 )
 
@@ -29,20 +28,14 @@
     (bytes-append (subbytes msgbytes 0 (- (bytes-length msgbytes) 8)) bit-len)))
 
 ; pad message
-; TODO implement it with ports
-(define (padmessage msgbytes)
-  (let* (
-         [bit-len (* 8 (bytes-length msgbytes))]
-         [msgbytes (addstopbit msgbytes)])
-    (insert-msglen (expand-message msgbytes) bit-len)))
-
-(define (padmessage-ng
+(define (padmessage
           (inport (current-input-port))
           (outport (current-output-port)))
   (let ([buffer (make-bytes 64 0)])
     (let loop ([read-so-far 0]
                [read-last (read-bytes! buffer inport 0 64)])
-      (let ([last? (eof-object? (peek-bytes 1 0 inport))])
+      (let ([last? (eof-object? (peek-bytes 1 0 inport))]
+            [read-last (if (eof-object? read-last) 0 read-last)])
         (cond
           (last?
             (let ([sub-buffer (subbytes buffer 0 read-last)]
@@ -322,6 +315,15 @@
 
 (define (ripemd160 message (string? #f))
   (if string?
-    (md160->string (compress (padmessage message)))
-    (md160->number (compress (padmessage message)))))
+    (md160->string
+      (compress
+        (with-output-to-bytes
+          (lambda () (call-with-input-bytes message padmessage)))
+        ))
+    (md160->number
+      (compress 
+        (with-output-to-bytes
+          (lambda () (call-with-input-bytes message padmessage)))
+        ))))
+
 
