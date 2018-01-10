@@ -25,7 +25,7 @@
     )
   )
 ;TODO
-;1 million times "a"	52783243c1697bdbe16d37f97f68f08325dc1528
+;1 million times "a"	#x52783243c1697bdbe16d37f97f68f08325dc1528 "52783243c1697bdbe16d37f97f68f08325dc1528"
 
 ;;;;; padhex ;;;;;
 (check-equal? (padhex 258) "0102")
