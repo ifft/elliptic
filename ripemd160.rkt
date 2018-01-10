@@ -39,20 +39,19 @@
 (define (padmessage-ng
           (inport (current-input-port))
           (outport (current-output-port)))
-  (letrec ([buffer (make-bytes 64 0)]
-           [bytes-read (read-bytes! buffer inport 0 64)]
-           [loop
-             (lambda (bytes-read_)
-               (let ([last? (eof-object? (read-bytes 1 inport))])
-                 (cond
-                   (last?
-                     (let ([sub-buffer (subbytes buffer 0 bytes-read_)])
-                       (write-bytes (insert-msglen (expand-message (addstopbit sub-buffer)) (* 8 bytes-read)))))
-                   (else 
-                     (write-bytes buffer)
-                     (let ([next-bytes-read (read-bytes! buffer inport 0 64)])
-                       (loop (+ next-bytes-read bytes-read_)))))))])
-    (loop bytes-read)))
+  (let ([buffer (make-bytes 64 0)])
+    (let loop ([read-so-far 0]
+               [read-last (read-bytes! buffer inport 0 64)])
+      (let ([last? (eof-object? (peek-bytes 1 0 inport))])
+        (cond
+          (last?
+            (let ([sub-buffer (subbytes buffer 0 read-last)]
+                  [msglen (* 8 (+ read-so-far read-last))]
+                  )
+              (write-bytes (insert-msglen (expand-message (addstopbit sub-buffer)) msglen))))
+          (else
+            (write-bytes buffer)
+            (loop (+ read-so-far read-last) (read-bytes! buffer inport 0 64))))))))
     
 (define (n-byte-int->number n stepsize msgbytes)
   (let-values ([(ret x)
