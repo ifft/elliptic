@@ -124,7 +124,7 @@
       [len (bit-length message)]
       )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (make-bytes 56 0) (integer->integer-bytes len 8 #f #f))
     )
   )
@@ -135,7 +135,7 @@
       [len (bit-length message)]
       )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (make-bytes 56) (integer->integer-bytes len 8 #f #f))
     )
   )
@@ -148,7 +148,7 @@
    [len (bit-length message)]
    )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (integer->integer-bytes len 8 #f #f))
     )
   )
@@ -159,7 +159,7 @@
    [len (bit-length message)]
    )
   (check-equal?
-    (padmessage message)
+    (with-output-to-bytes (lambda () (call-with-input-bytes message padmessage-ng)))
     (bytes-append message (bytes #x80) (make-bytes 7 0) (make-bytes 56 0) (integer->integer-bytes len 8 #f #f))
     )
   )
