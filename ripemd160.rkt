@@ -21,6 +21,10 @@
 (define (addstopbit msgbytes)
  (bytes-append msgbytes (bytes #x80)))
 
+(define (addstopbit-ng msgbytes pos)
+ (bytes-set! msgbytes pos #x80)
+  )
+
 ; insert message bit-length to the last extradatalen bytes.
 ; last extradatalen bytes will be unconditionally overwritten
 (define (insert-msglen msgbytes bit-len)
@@ -40,20 +44,14 @@
           (inport (current-input-port))
           (outport (current-output-port)))
   ; TODO define the mutable bstr HERE!!!!
-  (define (loop msgbytes bit-len)
+  (define (loop msgbytes byte-len)
     (let* ([last? (eof-object? (peek-byte inport 1))]
            [msgout
              (if
                last?
-               (insert-msglen (expand-message (addstopbit msgbytes)) bit-len)
+               (insert-msglen (expand-message (addstopbit-ng msgbytes (add1 byte-len))) (* 8 byte-len))
                msgbytes)]
            [bstr (make-bytes 64 0)] )
-      ;(printf "bytes-length: ~a~n" (bytes-length msgbytes))
-      ;(printf "~a~n" msgbytes)
-      ;(printf "last? ~a~n" last?)
-      ;(printf "w/ stopbit ~a~n" (addstopbit msgbytes))
-      ;(printf "w/ expand ~a~n" (expand-message (addstopbit msgbytes)))
-      ;(printf "w/ len ~a~n" (insert-msglen (expand-message (addstopbit msgbytes)) bit-len))
       (write-bytes msgout)
 
       (cond
@@ -62,13 +60,14 @@
           (read-bytes! bstr inport 0 64)
           (loop
             bstr
-            (+ bit-len (* 8 (bytes-length bstr))))))))
+            ;(+ byte-len (bytes-length bstr)))))))
+            (+ byte-len 64))))))
 
   (let* ([bstr (make-bytes 64 0)]
          [chunk (read-bytes! bstr inport 0 64)]
-         [bitlen (if (eof-object? chunk) 0 chunk)])
-    ;(printf "initial bitlen: ~a~n" bitlen)
-    (loop bstr bitlen)))
+         [byte-len (if (eof-object? chunk) 0 chunk)])
+    ;(printf "initial bit-len ~a~n" bit-len)
+    (loop bstr byte-len)))
 
 
 (define (n-byte-int->number n stepsize msgbytes)
