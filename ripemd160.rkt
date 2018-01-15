@@ -224,29 +224,32 @@
       dword->bytes
       (vector->list final-blocks))))
 
-(define (compress msgbytes)
-  (let loop (
-             [msgbytes msgbytes]
-             [blockstates blockinit])
-    (cond
-      ((< (bytes-length msgbytes) blocklen) (assemble-result blockstates))
-      (else (let* ([new-blocks
-                     (map
-                       (lambda (branch)
-                         (let-values
-                           ([(a b c d e)
-                             (calc-branch (subbytes msgbytes 0 64) branch blockstates)])
-                           `#(,a ,b ,c ,d ,e)))
-                       machine)]
-                   [blocks-from-left (car new-blocks)]
-                   [blocks-from-right (cadr new-blocks)]
-                   [next-chunk (subbytes msgbytes 64 (bytes-length msgbytes))])
-              (loop
-                next-chunk
-                (merge-branch-results
-                  blockstates
-                  blocks-from-left
-                  blocks-from-right)))))))
+(define (compress
+          (inport (current-input-port))
+          (outport (current-output-port)))
+  (let ([buffer (make-bytes blocklen 0)])
+    (let loop (
+               [bytes-read (read-bytes! buffer inport 0 blocklen)]
+               [blockstates blockinit])
+      (if (or (eof-object? bytes-read)
+              (< bytes-read blocklen))
+        (assemble-result blockstates)
+        (let* ([new-blocks
+                 (map
+                   (lambda (branch)
+                     (let-values
+                       ([(a b c d e)
+                         (calc-branch buffer branch blockstates)])
+                       `#(,a ,b ,c ,d ,e)))
+                   machine)]
+               [blocks-from-left (car new-blocks)]
+               [blocks-from-right (cadr new-blocks)])
+          (loop
+            (read-bytes! buffer inport 0 blocklen)
+            (merge-branch-results
+              blockstates
+              blocks-from-left
+              blocks-from-right)))))))
 
 (define (dword-little-endian->big-endian bstr)
   (define (convertdword dword)
@@ -273,7 +276,16 @@
 (define (md160->number hash)
   (n-byte-int->number 20 4 (dword-little-endian->big-endian hash)))
 
-(define (ripemd160 message (string? #f))
+; TODO parallelize padding and hash calculation
+(define (ripemd160
+          (inport (current-input-port))
+          (outport (current-output-port))
+          (string? #f))
+  (let-values ([(in out) (make-pipe)])
+              (padmessage inport out)
+              (compress in outport)
+              ))
+#|
   (if string?
     (md160->string
       (compress
@@ -283,5 +295,4 @@
       (compress 
         (with-output-to-bytes
           (lambda () (call-with-input-bytes message padmessage)))))))
-
-
+|#
