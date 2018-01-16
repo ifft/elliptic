@@ -192,6 +192,7 @@
 (check-equal? (dword+ (sub1 (expt 2 32)) 1) 0)
 (check-equal? (dword+ (sub1 (expt 2 32)) 2) 1)
 
+#|
 ;;;;; test ripemd160 both number and string versions
 (for-each
   (lambda (testcase)
@@ -201,5 +202,4 @@
       (check-equal? (ripemd160 (string->bytes/utf-8 message)) hash)
       (check-equal? (ripemd160 (string->bytes/utf-8 message) #t) hashstr)))
   ripemd160-test-vectors)
-#|
 |#

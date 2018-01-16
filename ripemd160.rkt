@@ -20,6 +20,10 @@
 (define (addstopbit msgbytes)
  (bytes-append msgbytes (bytes #x80)))
 
+(define (addstopbit-ng msgbytes pos)
+ (bytes-set! msgbytes pos #x80)
+  )
+
 ; insert message bit-length to the last extradatalen bytes.
 ; last extradatalen bytes will be unconditionally overwritten
 (define (insert-msglen msgbytes bit-len)
