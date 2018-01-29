@@ -1,6 +1,6 @@
 #lang racket
 (require rackunit "elliptic-crypto.rkt")
-(require "hash-utils.rkt")
+(require "ripemd160.rkt")
 (require "utility.rkt")
 (require "bitcoin-curve.rkt")
 (require "modulo-arith.rkt")

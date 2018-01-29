@@ -1,4 +1,5 @@
 #lang racket
+(require "debug.rkt")
 (require "utility.rkt")
 
 (provide
@@ -11,14 +12,6 @@
   neg
   )
 
-
-(define debug (make-parameter #t))
-(define devel (make-parameter #t))
-(define dprintf
- (lambda x
-   (when (debug) (apply printf x))
- )
-)
 
 (define (binary-mul x n) (binary-op x n
                                     (lambda (carry) (* 2 carry))
@@ -125,7 +118,7 @@
              [s #(1 0)]
              [t #(0 1)]
              )
-   ;(dprintf "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
+    (debug "q/r ~a ~a~n" (vector-ref r 0) (vector-ref r 1))
     (let-values ([(quot rem) (quotient/remainder (vector-ref r 0) (vector-ref r 1))])
                 (let* (
                        [r2 (- (vector-ref r 0) (* quot (vector-ref r 1)))]
@@ -151,7 +144,7 @@
   )
 
 (define (inverse-of x p)
-  ;(dprintf "inverse-of ~a ~a~n" x p)
+  (debug "inverse-of ~a ~a~n" x p)
   (let-values ([(gcd a b) (euclid++ x p)])
               (unless (equal? gcd 1) (error 'gcd-not-eq-1 "gcd(~a ~a) != 1"  x p))
               (unless (equal? (modulo (+ (* a x) (* b p)) p) gcd) 'euclid-wrong-result "(~a * ~a) + (~a * ~a) != ~a"

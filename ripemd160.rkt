@@ -1,8 +1,11 @@
 #lang racket
+(require "debug.rkt")
 (require "utility.rkt")
 (provide 
  padmessage
  ripemd160
+ ;XXX
+ (all-defined-out)
 )
 
 (define blocklen 64)
@@ -40,13 +43,13 @@
                [read-last (read-bytes! buffer inport 0 blocklen)])
       (let ([last? (eof-object? (peek-bytes 1 0 inport))]
             [read-last (if (eof-object? read-last) 0 read-last)])
-        (cond
-          (last?
-            (let ([sub-buffer (subbytes buffer 0 read-last)]
-                  [msglen (* 8 (+ read-so-far read-last))])
-              (write-bytes (insert-msglen (expand-message (addstopbit sub-buffer)) msglen))))
-          (else
-            (write-bytes buffer)
+        (if last?
+          (let ([sub-buffer (subbytes buffer 0 read-last)]
+                [msglen (* 8 (+ read-so-far read-last))])
+            (write-bytes (insert-msglen (expand-message (addstopbit sub-buffer)) msglen) outport)
+            (close-output-port outport))
+          (begin
+            (write-bytes buffer outport)
             (loop (+ read-so-far read-last) (read-bytes! buffer inport 0 blocklen))))))))
     
 (define (n-byte-int->number n stepsize msgbytes)
@@ -229,15 +232,15 @@
       (vector->list final-blocks))))
 
 (define (compress
-          (inport (current-input-port))
-          (outport (current-output-port)))
+          (inport (current-input-port)))
   (let ([buffer (make-bytes blocklen 0)])
     (let loop (
                [bytes-read (read-bytes! buffer inport 0 blocklen)]
                [blockstates blockinit])
       (if (or (eof-object? bytes-read)
               (< bytes-read blocklen))
-        (assemble-result blockstates)
+        (begin (debug "BS 1-1: ~a~n" blockstates)
+        (assemble-result blockstates))
         (let* ([new-blocks
                  (map
                    (lambda (branch)
@@ -248,12 +251,40 @@
                    machine)]
                [blocks-from-left (car new-blocks)]
                [blocks-from-right (cadr new-blocks)])
+          (debug "BS 1-2: ~a~n" blockstates)
           (loop
             (read-bytes! buffer inport 0 blocklen)
             (merge-branch-results
               blockstates
               blocks-from-left
               blocks-from-right)))))))
+
+(define (compress-closure
+          (inport (current-input-port)))
+  (let ([blockstates blockinit]
+        [buffer (make-bytes blocklen 0)])
+    (lambda ()
+      (let ([bytes-read (read-bytes! buffer inport 0 blocklen)])
+        (if (or (eof-object? bytes-read)
+                (bytes-read . < . blocklen))
+          (begin (debug "BS 2-1: ~a~n" blockstates)
+          (assemble-result blockstates))
+          (let* ([new-blocks
+                   (map
+                     (lambda (branch)
+                       (let-values
+                         ([(a b c d e) (calc-branch buffer branch blockstates)])
+                         `#(,a ,b ,c ,d ,e)))
+                     machine)]
+                 [blocks-from-left (car new-blocks)]
+                 [blocks-from-right (cadr new-blocks)]
+                 [new-blockstates (merge-branch-results
+                                    blockstates
+                                    blocks-from-left
+                                    blocks-from-right)])
+            (set! blockstates new-blockstates)
+            (debug "BS 2-2: ~a ~n" blockstates)
+            (assemble-result blockstates)))))))
 
 (define (dword-little-endian->big-endian bstr)
   (define (convertdword dword)
@@ -281,14 +312,26 @@
   (n-byte-int->number 20 4 (dword-little-endian->big-endian hash)))
 
 ; TODO parallelize padding and hash calculation
+; TODO implement the loop
 (define (ripemd160
           (inport (current-input-port))
-          (outport (current-output-port))
-          (string? #f))
+          #:string-output (string? #f))
   (let-values ([(in out) (make-pipe)])
               (padmessage inport out)
-              (compress in outport)
-              ))
+              (if string?
+               (md160->string (compress in))
+               (md160->number (compress in)))))
+
+(define (ripemd160-closure
+          (inport (current-input-port))
+          #:string-output (string? #f))
+  (let-values ([(in out) (make-pipe)])
+              (padmessage inport out)
+              (let ([compress (compress-closure in)])
+                (if string?
+                  (md160->string (compress))
+                  (md160->number (compress))))))
+
 #|
   (if string?
     (md160->string

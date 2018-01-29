@@ -1,9 +1,10 @@
 #lang racket
+(require "debug.rkt")
 (require rackunit "elliptic-arith.rkt")
 (require "utility.rkt")
 (require "bitcoin-curve.rkt")
 (require "modulo-arith.rkt")
-(parameterize ([debug (if (getenv "DEBUG") #t #f)])
+(parameterize ([debug? (if (getenv "DEBUG") #t #f)])
 (define primes '(13 17 19 23 101 103))
 
 ;;;;; negate ;;;;;

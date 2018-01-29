@@ -1,4 +1,6 @@
 #lang racket
+(require racket/generator)
+(require "debug.rkt")
 (require rackunit "ripemd160.rkt")
 (require rackunit "utility.rkt")
 (require/expose "ripemd160.rkt"
@@ -14,14 +16,14 @@
 ;;;;; RIPEMD 160 test vectors ;;;;;
 (define ripemd160-test-vectors
   '(
-    #("" #x9c1185a5c5e9fc54612808977ee8f548b2258d31    "9c1185a5c5e9fc54612808977ee8f548b2258d31")
-    #("a" #x0bdc9d2d256b3ee9daae347be6f4dc835a467ffe   "0bdc9d2d256b3ee9daae347be6f4dc835a467ffe")
-    #("abc" #x8eb208f7e05d987a9b044a8e98c6b087f15a0bfc "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc")
-    #("message digest"  #x5d0689ef49d2fae572b881b123a85ffa21595f36 "5d0689ef49d2fae572b881b123a85ffa21595f36")
-    #("abcdefghijklmnopqrstuvwxyz" #xf71c27109c692c1b56bbdceb5b9d2865b3708dbc "f71c27109c692c1b56bbdceb5b9d2865b3708dbc")
+    ;#("" #x9c1185a5c5e9fc54612808977ee8f548b2258d31    "9c1185a5c5e9fc54612808977ee8f548b2258d31")
+    ;#("a" #x0bdc9d2d256b3ee9daae347be6f4dc835a467ffe   "0bdc9d2d256b3ee9daae347be6f4dc835a467ffe")
+    ;#("abc" #x8eb208f7e05d987a9b044a8e98c6b087f15a0bfc "8eb208f7e05d987a9b044a8e98c6b087f15a0bfc")
+    ;#("message digest"  #x5d0689ef49d2fae572b881b123a85ffa21595f36 "5d0689ef49d2fae572b881b123a85ffa21595f36")
+    ;#("abcdefghijklmnopqrstuvwxyz" #xf71c27109c692c1b56bbdceb5b9d2865b3708dbc "f71c27109c692c1b56bbdceb5b9d2865b3708dbc")
     #("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" #x12a053384a9c0c88e405a06c27dcf49ada62eb2b "12a053384a9c0c88e405a06c27dcf49ada62eb2b")
-    #("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" #xb0e20b6e3116640286ed3a87a5713079b21f5189 "b0e20b6e3116640286ed3a87a5713079b21f5189")
-    #("12345678901234567890123456789012345678901234567890123456789012345678901234567890" #x9b752e45573d4b39f4dbd3323cab82bf63326bfb "9b752e45573d4b39f4dbd3323cab82bf63326bfb")
+    ;#("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" #xb0e20b6e3116640286ed3a87a5713079b21f5189 "b0e20b6e3116640286ed3a87a5713079b21f5189")
+    ;#("12345678901234567890123456789012345678901234567890123456789012345678901234567890" #x9b752e45573d4b39f4dbd3323cab82bf63326bfb "9b752e45573d4b39f4dbd3323cab82bf63326bfb")
     )
   )
 ;TODO
@@ -192,14 +194,36 @@
 (check-equal? (dword+ (sub1 (expt 2 32)) 1) 0)
 (check-equal? (dword+ (sub1 (expt 2 32)) 2) 1)
 
-#|
 ;;;;; test ripemd160 both number and string versions
 (for-each
   (lambda (testcase)
-    (let ([message (vector-ref testcase 0)]
+    (let ([message (string->bytes/utf-8 (vector-ref testcase 0))]
           [hash    (vector-ref testcase 1)]
           [hashstr (vector-ref testcase 2)])
-      (check-equal? (ripemd160 (string->bytes/utf-8 message)) hash)
-      (check-equal? (ripemd160 (string->bytes/utf-8 message) #t) hashstr)))
+      (check-equal? (call-with-input-bytes message ripemd160) hash)
+      (check-equal? (call-with-input-bytes message (lambda (in) (ripemd160 in #:string-output #t))) hashstr)))
   ripemd160-test-vectors)
-|#
+
+
+;;;;; the "one million times `a`" testcase ;;;;;
+(define gen-a-s (generator ()
+                 (let loop ([n 1000000])
+                  (if (zero? n)
+                   0
+                   (begin
+                    (yield #"a")
+                    (loop (sub1 n)))))))
+
+;;;;; test ripemd160, closure version
+(parameterize
+  ([debug? #t])
+  (for-each
+    (lambda (testcase)
+      (let ([message (string->bytes/utf-8 (vector-ref testcase 0))]
+            [hash    (vector-ref testcase 1)]
+            [hashstr (vector-ref testcase 2)])
+        (check-equal? (call-with-input-bytes message ripemd160-closure) hash)
+        (check-equal? (call-with-input-bytes message (lambda (in) (ripemd160-closure in #:string-output #t))) hashstr)))
+    ripemd160-test-vectors)
+  (call-with-input-bytes #"a" ripemd160)
+  (call-with-input-bytes #"a" ripemd160-closure))

@@ -10,13 +10,7 @@
   validate
   sign-point
   (struct-out point)
-  (struct-out elliptic-curve)
-
-  debug
-  )
-
-(define debug (make-parameter #t))
-(define devel (make-parameter #t))
+  (struct-out elliptic-curve))
 
 (struct point (x y) #:transparent)
 (struct elliptic-curve (a b p G n bytelen) #:transparent)
